@@ -20,6 +20,7 @@ final class TornadoV4Adapter: NSObject, SmartCubeAdapter {
     private var lastMoveSeq: UInt8 = 0xFF
     private var isConnected = false
     private var handshakeComplete = false
+    private var hasSentHandshakeAck = false
     
     func matches(peripheral: CBPeripheral, advertisementData: [String: Any]) -> Bool {
         let name = peripheral.name?.lowercased() ?? ""
@@ -46,6 +47,7 @@ final class TornadoV4Adapter: NSObject, SmartCubeAdapter {
         dataCharacteristic = nil
         isConnected = false
         handshakeComplete = false
+        hasSentHandshakeAck = false
         delegate?.adapter(self, didChangeConnection: false)
     }
     
@@ -92,6 +94,32 @@ final class TornadoV4Adapter: NSObject, SmartCubeAdapter {
         if opcode == 0x26 {
             handshakeComplete = true
             delegate?.adapter(self, didReceiveDebug: "Handshake complete, cube ready")
+            sendHandshakeAckIfNeeded(from: data)
+        }
+    }
+    
+    private func sendHandshakeAckIfNeeded(from data: Data) {
+        guard !hasSentHandshakeAck,
+              data.count >= 7,
+              let peripheral = peripheral,
+              let characteristic = dataCharacteristic else { return }
+        
+        hasSentHandshakeAck = true
+        
+        var ack: [UInt8] = [0xFE, 0x09]
+        ack.append(contentsOf: data[2...6])
+        
+        let crc = CRC16.modbus(ack)
+        ack.append(UInt8(crc & 0xFF))
+        ack.append(UInt8((crc >> 8) & 0xFF))
+        
+        while ack.count < 16 {
+            ack.append(0x00)
+        }
+        
+        if let encrypted = crypto.encrypt(Data(ack)) {
+            peripheral.writeValue(encrypted, for: characteristic, type: .withoutResponse)
+            delegate?.adapter(self, didReceiveDebug: "Sent handshake ACK")
         }
     }
     
@@ -171,20 +199,22 @@ final class TornadoV4Adapter: NSObject, SmartCubeAdapter {
         guard let peripheral = peripheral,
               let characteristic = dataCharacteristic else { return }
         
-        var macBytes: [UInt8] = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
-        if let name = peripheral.name,
-           let range = name.range(of: "-", options: .backwards) {
-            let hexPart = String(name[range.upperBound...])
-            if hexPart.count == 4,
-               let val = UInt16(hexPart, radix: 16) {
-                macBytes[4] = UInt8((val >> 8) & 0xFF)
-                macBytes[5] = UInt8(val & 0xFF)
+        var macBytes: [UInt8] = [0xCC, 0xA6, 0x00, 0x00, 0x00, 0x00]
+        if let rawName = peripheral.name {
+            let name = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let range = name.range(of: "-", options: .backwards) {
+                let hexPart = String(name[range.upperBound...])
+                if hexPart.count == 4,
+                   let val = UInt16(hexPart, radix: 16) {
+                    macBytes[4] = UInt8((val >> 8) & 0xFF)
+                    macBytes[5] = UInt8(val & 0xFF)
+                }
             }
         }
         
         var hello: [UInt8] = [
-            0xFE, 0x15, 0x00, 0x6B, 0x01, 0x00, 0x00, 0x22,
-            0x06, 0x00, 0x02, 0x08, 0x00
+            0xFE, 0x15, 0xF0, 0xAE, 0x02, 0x00, 0x00, 0x24,
+            0x01, 0x00, 0x02, 0x27, 0x1E
         ]
         hello.append(contentsOf: macBytes.reversed())
         

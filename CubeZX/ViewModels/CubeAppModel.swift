@@ -15,6 +15,10 @@ final class CubeAppModel: ObservableObject {
     @Published var connectedDeviceName: String?
     @Published var batteryLevel: Int?
     
+    @Published var isDebugModeEnabled = true
+    @Published var showRawBLEData = false
+    @Published var showDebugOverlay = true
+    
     private(set) var faceMapping = CubeFaceMapping()
 
     let bluetoothManager = CubeBluetoothManager()
@@ -136,6 +140,12 @@ extension CubeAppModel: SmartCubeAdapterDelegate {
     }
 
     func adapter(_ adapter: SmartCubeAdapter, didReceiveDebug message: String) {
+        guard isDebugModeEnabled else { return }
+        
+        if !showRawBLEData && (message.hasPrefix("RX:") || message.hasPrefix("DEC:")) {
+            return
+        }
+        
         debugLogger.log(message, source: adapter.displayName)
     }
     
