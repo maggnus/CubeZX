@@ -135,13 +135,16 @@ final class TornadoV4Adapter: NSObject, SmartCubeAdapter {
         
         let moveByte = data[3] >> 4
         
-        guard let move = decodeMove(moveByte) else {
-            delegate?.adapter(self, didReceiveDebug: "Unknown move byte: 0x\(String(format: "%X", moveByte))")
-            return
-        }
+        guard moveByte != 0 else { return }
         
-        delegate?.adapter(self, didReceiveDebug: "Move: \(move.notation) (seq=\(seq))")
-        delegate?.adapter(self, didReceiveMove: move)
+        let moveHex = String(format: "0x%X", moveByte)
+        
+        if let move = decodeMove(moveByte) {
+            delegate?.adapter(self, didReceiveDebug: "Move: \(move.notation) [\(moveHex)]")
+            delegate?.adapter(self, didReceiveMove: move)
+        } else {
+            delegate?.adapter(self, didReceiveDebug: "Move: _ [\(moveHex)]")
+        }
     }
     
     private func handleGyroMessage(_ data: Data) {
@@ -171,10 +174,10 @@ final class TornadoV4Adapter: NSObject, SmartCubeAdapter {
             face = .down
             direction = .clockwise
         case 0x7:
-            face = .back
+            face = .up
             direction = .counterClockwise
         case 0x8:
-            face = .back
+            face = .up
             direction = .clockwise
         case 0x9:
             face = .front
@@ -183,10 +186,10 @@ final class TornadoV4Adapter: NSObject, SmartCubeAdapter {
             face = .front
             direction = .clockwise
         case 0xB:
-            face = .up
+            face = .back
             direction = .counterClockwise
         case 0xC:
-            face = .up
+            face = .back
             direction = .clockwise
         default:
             return nil

@@ -169,10 +169,10 @@ struct VisualCubeState {
     
     static func solved() -> VisualCubeState {
         VisualCubeState(
-            upFace: Array(repeating: Array(repeating: yellow, count: 3), count: 3),
-            downFace: Array(repeating: Array(repeating: white, count: 3), count: 3),
-            frontFace: Array(repeating: Array(repeating: blue, count: 3), count: 3),
-            backFace: Array(repeating: Array(repeating: green, count: 3), count: 3),
+            upFace: Array(repeating: Array(repeating: blue, count: 3), count: 3),
+            downFace: Array(repeating: Array(repeating: yellow, count: 3), count: 3),
+            frontFace: Array(repeating: Array(repeating: green, count: 3), count: 3),
+            backFace: Array(repeating: Array(repeating: white, count: 3), count: 3),
             leftFace: Array(repeating: Array(repeating: orange, count: 3), count: 3),
             rightFace: Array(repeating: Array(repeating: red, count: 3), count: 3)
         )

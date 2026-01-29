@@ -4,7 +4,7 @@ import Foundation
 final class CubeAppModel: ObservableObject {
     @Published var cubeState: CubeState = .solved()
     @Published var isDiscoveryPresented = false
-    @Published var isDebugPresented = true
+    @Published var isDebugPresented = false
     @Published var isNotationPresented = false
     @Published var pendingMove: CubeMove?
     @Published var shouldReset = false

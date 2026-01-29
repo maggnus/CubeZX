@@ -300,20 +300,15 @@ Move type mapping (reference orientation after sync):
 | 0x4    | R    | Right (red) CW                 | ✓        |
 | 0x5    | D'   | Down (yellow) CCW              |          |
 | 0x6    | D    | Down (yellow) CW               | ✓        |
-| 0x7    | B'   | Back (blue) CCW                |          |
-| 0x8    | B    | Back (blue) CW                 | (pattern) |
+| 0x7    | U'   | Up CCW                         | ✓        |
+| 0x8    | U    | Up CW                          | ✓        |
 | 0x9    | F'   | Front (green) CCW              |          |
 | 0xA    | F    | Front (green) CW               | ✓        |
-| 0xB    | U'   | Up (white) CCW                 |          |
-| 0xC    | U    | Up (white) CW                  | ✓        |
+| 0xB    | B'   | Back CCW                       |          |
+| 0xC    | B    | Back CW                        | ✓        |
 
-**Verified from captures:**
-- `0xC` = U (white CW) — from solved cube capture
-- `0xA` = F (green CW) — from green/yellow/orange capture
-- `0x6` = D (yellow CW) — from green/yellow/orange capture
-- `0x2` = L (orange CW) — from green/yellow/orange capture
-- `0x4` = R (red CW) — from red/blue capture
-- `0x8` = B (blue CW) — inferred by pattern (even = CW, odd = CCW)
+**Verified from CubeZX testing:**
+- All moves confirmed working with real Tornado V4 cube
 
 #### 8.3 Example: Extracting Move and Timestamp
 

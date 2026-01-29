@@ -3,10 +3,10 @@ import SwiftUI
 struct DebugPopup: View {
     @ObservedObject var logger: DebugLogger
     let cubeOrientation: String
+    @Binding var isDebugEnabled: Bool
+    @Binding var showRawData: Bool
+    @Binding var showOverlay: Bool
     let onClose: () -> Void
-    
-    private let hackerGreen = Color(red: 0.0, green: 1.0, blue: 0.3)
-    private let dimGreen = Color(red: 0.0, green: 0.6, blue: 0.2)
     
     private var timeFormatter: DateFormatter {
         let f = DateFormatter()
@@ -15,66 +15,49 @@ struct DebugPopup: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(spacing: 12) {
             HStack {
-                Text("[ CUBE_DEBUG_CONSOLE ]")
-                    .font(.system(size: 14, weight: .bold, design: .monospaced))
-                    .foregroundColor(hackerGreen)
+                Text("Debug")
+                    .font(.headline)
+                    .foregroundColor(.white)
                 Spacer()
                 Text(cubeOrientation)
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundColor(dimGreen)
-                Spacer()
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.7))
                 Button(action: onClose) {
-                    Text("[X]")
-                        .font(.system(size: 14, weight: .bold, design: .monospaced))
-                        .foregroundColor(hackerGreen)
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title3)
+                        .foregroundColor(.white.opacity(0.8))
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.bottom, 8)
-            
-            Rectangle()
-                .fill(hackerGreen.opacity(0.3))
-                .frame(height: 1)
-            
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 2) {
-                        ForEach(logger.entries) { entry in
-                            HStack(alignment: .top, spacing: 8) {
-                                Text(timeFormatter.string(from: entry.timestamp))
-                                    .font(.system(size: 10, design: .monospaced))
-                                    .foregroundColor(dimGreen.opacity(0.7))
-                                Text("[\(entry.source)]")
-                                    .font(.system(size: 10, weight: .medium, design: .monospaced))
-                                    .foregroundColor(dimGreen)
-                                Text(entry.message)
-                                    .font(.system(size: 11, design: .monospaced))
-                                    .foregroundColor(hackerGreen)
-                            }
-                            .id(entry.id)
-                        }
-                    }
-                    .padding(.vertical, 8)
-                }
-                .onChange(of: logger.entries.count) { _ in
-                    if let first = logger.entries.first {
-                        withAnimation(.easeOut(duration: 0.2)) {
-                            proxy.scrollTo(first.id, anchor: .top)
-                        }
-                    }
-                }
+
+            Divider()
+                .background(Color.white.opacity(0.2))
+
+            VStack(alignment: .leading, spacing: 8) {
+                Toggle("Debug mode", isOn: $isDebugEnabled)
+                Toggle("Show raw BLE data", isOn: $showRawData)
+                Toggle("Show debug overlay", isOn: $showOverlay)
             }
+            .tint(.blue)
+            .padding(.vertical, 4)
+
+            Divider()
+                .background(Color.white.opacity(0.2))
+
+            Spacer()
         }
-        .padding(16)
-        .background(Color.black.opacity(0.95))
-        .cornerRadius(8)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(hackerGreen.opacity(0.5), lineWidth: 1)
-        )
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.black.opacity(0.85))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                )
+        )
+        .frame(maxWidth: 420, maxHeight: 500)
+        .padding(40)
     }
 }

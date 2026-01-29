@@ -17,10 +17,17 @@ struct ContentView: View {
 
             GeometryReader { geo in
                 ZStack {
-                    CubeSceneView(cubeState: model.cubeState, pendingMove: model.pendingMove, shouldReset: model.shouldReset, onMoveAnimated: model.onMoveAnimated, onResetComplete: model.onResetComplete, onOrientationChanged: model.updateOrientation)
-                        .frame(width: geo.size.width, height: geo.size.height)
+                    CubeSceneView(
+                        cubeState: model.cubeState,
+                        pendingMove: model.pendingMove,
+                        shouldReset: model.shouldReset,
+                        onMoveAnimated: model.onMoveAnimated,
+                        onResetComplete: model.onResetComplete,
+                        onOrientationChanged: model.updateOrientation
+                    )
+                    .frame(width: geo.size.width, height: geo.size.height)
                     
-                    if model.isDebugPresented {
+                    if model.isDebugModeEnabled && model.showDebugOverlay {
                         DebugTerminalOverlay(logger: model.debugLogger)
                     }
                 }
@@ -73,6 +80,17 @@ struct ContentView: View {
             
             if model.isNotationPresented {
                 NotationPopup(onClose: { model.isNotationPresented = false })
+            }
+            
+            if model.isDebugPresented {
+                DebugPopup(
+                    logger: model.debugLogger,
+                    cubeOrientation: model.cubeOrientationString,
+                    isDebugEnabled: $model.isDebugModeEnabled,
+                    showRawData: $model.showRawBLEData,
+                    showOverlay: $model.showDebugOverlay,
+                    onClose: { model.isDebugPresented = false }
+                )
             }
 
         }
