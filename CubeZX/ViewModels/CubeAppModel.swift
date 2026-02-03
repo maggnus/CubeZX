@@ -43,8 +43,10 @@ final class CubeAppModel: ObservableObject {
         // U=white, D=yellow (top-bottom)
         // F=green, B=blue (front-back) 
         // L=orange, R=red (left-right)
-        // Identity orientation already has correct opposite face pairing
-        let baseRotation = simd_quatf(angle: 0, axis: simd_float3(0, 1, 0))  // No rotation for standard orientation
+        // Correction: rotate +90° around X, then -90° around Y, then 180° around Y
+        let rotateX = simd_quatf(angle: Float.pi / 2, axis: simd_float3(1, 0, 0))
+        let rotateY = simd_quatf(angle: -Float.pi / 2 + Float.pi, axis: simd_float3(0, 1, 0))  // -90° + 180° = +90°
+        let baseRotation = rotateY * rotateX
         let tiltLeft = simd_quatf(angle: -Float.pi / 6, axis: simd_float3(0, 1, 0))      // Tilt left for visibility (clockwise around vertical)
         let tiltUp = simd_quatf(angle: Float.pi / 8, axis: simd_float3(1, 0, 0))         // Tilt upward for visibility (counter-clockwise around horizontal)
         return tiltLeft * tiltUp * baseRotation

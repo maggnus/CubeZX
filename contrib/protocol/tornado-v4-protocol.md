@@ -365,14 +365,16 @@ SceneKit.Z = -Cube.X  (GB axis: Green-Blue)
 
 **Quaternion Transformation**:
 ```swift
-let displayQuat = simd_quatf(ix: -rawZ, iy: rawY, iz: -rawX, r: rawW)
+let mappedQuat = simd_quatf(ix: -rawZ, iy: rawY, iz: -rawX, r: rawW)
 ```
 
-**Optional Orientation Offset**:
-To set a default "home" orientation (e.g., white up, green front):
-1. Capture current sensor quaternion as reference
-2. Calculate offset: `offset = defaultOrientation × sensorQuaternion⁻¹`
-3. Apply offset to all subsequent readings: `displayQuat = offset × sensorQuat`
+**Initial Orientation Correction**:
+To align virtual cube with physical orientation (white up, green front):
+```swift
+let rotateX = simd_quatf(angle: Float.pi / 2, axis: simd_float3(1, 0, 0))   // +90° around X
+let rotateY = simd_quatf(angle: Float.pi / 2, axis: simd_float3(0, 1, 0))   // +90° around Y
+let baseRotation = rotateY * rotateX
+```
 
 ## Checksum
 

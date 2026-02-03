@@ -194,15 +194,15 @@ final class TornadoV4Adapter: NSObject, SmartCubeAdapter {
         // Protocol nibble value to face: 0=O, 1=R, 2=Y, 3=W, 4=G, 5=B (0=Orange, 1=Red, 2=Yellow, 3=White, 4=Green, 5=Blue)
         // Protocol face order: W(0), R(1), G(2), Y(3), O(4), B(5) -> Our face order: U(0), D(1), L(2), R(3), F(4), B(5)
         
-        // Nibble represents face index in URFDLB order, not color code
-        // Face 0=U(White), 1=R(Red), 2=F(Green), 3=D(Yellow), 4=L(Orange), 5=B(Blue)
+        // Protocol nibble values from documentation:
+        // 0=Orange, 1=Red, 2=Yellow, 3=White, 4=Green, 5=Blue
         let protocolNibbleToColor: [CubeColor] = [
-            .white,   // 0 = U face = White
-            .red,     // 1 = R face = Red
-            .green,   // 2 = F face = Green
-            .yellow,  // 3 = D face = Yellow
-            .orange,  // 4 = L face = Orange
-            .blue     // 5 = B face = Blue
+            .orange,  // 0 → Orange
+            .red,     // 1 → Red
+            .yellow,  // 2 → Yellow
+            .white,   // 3 → White
+            .green,   // 4 → Green
+            .blue     // 5 → Blue
         ]
         
         // Parse 54 facelets from 27 bytes
