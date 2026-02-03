@@ -65,6 +65,10 @@ final class CubeAppModel: ObservableObject {
     // Track if user is currently dragging
     private var isUserDragging = false
     
+    // Auto-calibration: calibrate orientation after gyro data stabilizes
+    private var hasAutoCalibrated = false
+    private var autoCalibrationTimer: Timer?
+    
     func onUserInteraction() {
         isUserDragging = true
     }
@@ -368,6 +372,10 @@ extension CubeAppModel: SmartCubeAdapterDelegate {
             deviceMAC = nil
             batteryLevel = nil
             moveCount = 0
+            // Reset auto-calibration for next connection
+            hasAutoCalibrated = false
+            autoCalibrationTimer?.invalidate()
+            autoCalibrationTimer = nil
             // Properly clean up adapter on disconnect (restores BLE delegate for scanning)
             adapter.detach()
             activeAdapter = nil
@@ -407,7 +415,16 @@ extension CubeAppModel: SmartCubeAdapterDelegate {
         let rawY = Float(y) * scale
         let rawZ = Float(z) * scale
         
-        // Remap sensor axes to SceneKit axes: swap X<->Z and negate both
+        // DEBUG: Log raw quaternion to determine axis mapping
+        if showGyroDebug {
+            let msg = String(format: "RAW quat: w=%.2f X=%.2f Y=%.2f Z=%.2f", rawW, rawX, rawY, rawZ)
+            logger.info(Logger.Message(stringLiteral: msg), metadata: ["source": .string("GyroTest")])
+        }
+        
+        // Axis mapping from Cube sensor to SceneKit (verified by testing):
+        // SceneKit.X = -Cube.Z (OR axis)
+        // SceneKit.Y = +Cube.Y (WY axis)
+        // SceneKit.Z = -Cube.X (GB axis)
         rawSensorQuat = simd_quatf(ix: -rawZ, iy: rawY, iz: -rawX, r: rawW)
         
         // Don't update view orientation during user drag - offset is being set by mouse

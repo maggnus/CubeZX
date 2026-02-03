@@ -85,23 +85,23 @@ final class TornadoV4Adapter: NSObject, SmartCubeAdapter {
         
         // FE 26 command with solved state - discovered from official app capture
         // Format: FE 26 <flags> <session> <facelets...>
-        // Solved facelets: LRDUFB order, each nibble is face color (0=L,1=R,2=D,3=U,4=F,5=B)
+        // Solved facelets: URFDLB order, each nibble is face color (0=L,1=R,2=D,3=U,4=F,5=B)
+        // Verified from BLE capture: 33 33 33 33 13 11 11 11 11 44 44 44 44 24 22 22 22 22 00 00 00 00 50 55 55 55 55
         var cmd: [UInt8] = [
             0xFE, 0x26,                         // Header: same as handshake response!
             0x04,                               // Command flag (from capture)
             0xB3, 0x4D, 0x05, 0x0F,             // Session/timestamp (may vary)
             // Solved state facelets (27 bytes for 54 facelets):
-            // Protocol face order: LRDUFB
-            // L face (all 0s): 00 00 00 00 + low nibble of next
-            0x00, 0x00, 0x00, 0x00,             // L face (9 facelets = 4.5 bytes)
-            0x10,                               // L[8]=0, R[0]=1
-            0x11, 0x11, 0x11, 0x11,             // R face
-            0x22, 0x22, 0x22, 0x22,             // D face + half
-            0x32,                               // D[8]=2, U[0]=3
-            0x33, 0x33, 0x33, 0x33,             // U face
-            0x44, 0x44, 0x44, 0x44,             // F face + half
-            0x54,                               // F[8]=4, B[0]=5
-            0x55, 0x55, 0x55, 0x55,             // B face
+            // Protocol face order: URFDLB (Up, Right, Front, Down, Left, Back)
+            0x33, 0x33, 0x33, 0x33,             // U face (9 facelets = 4.5 bytes, all 3s)
+            0x13,                               // U[8]=3, R[0]=1
+            0x11, 0x11, 0x11, 0x11,             // R face (all 1s)
+            0x44, 0x44, 0x44, 0x44,             // F face (all 4s)
+            0x24,                               // F[8]=4, D[0]=2
+            0x22, 0x22, 0x22, 0x22,             // D face (all 2s)
+            0x00, 0x00, 0x00, 0x00,             // L face (all 0s)
+            0x50,                               // L[8]=0, B[0]=5
+            0x55, 0x55, 0x55, 0x55,             // B face (all 5s)
         ]
         
         // Pad to 32 bytes minimum
@@ -194,7 +194,7 @@ final class TornadoV4Adapter: NSObject, SmartCubeAdapter {
         // Protocol nibble value to face: 0=O, 1=R, 2=Y, 3=W, 4=G, 5=B (0=Orange, 1=Red, 2=Yellow, 3=White, 4=Green, 5=Blue)
         // Protocol face order: W(0), R(1), G(2), Y(3), O(4), B(5) -> Our face order: U(0), D(1), L(2), R(3), F(4), B(5)
         
-        // According to spec: protocol nibble values map to colors as specified
+        // Standard color mapping from protocol nibble to color
         // 0 = Orange, 1 = Red, 2 = Yellow, 3 = White, 4 = Green, 5 = Blue
         let protocolNibbleToColor: [CubeColor] = [
             .orange,  // 0 -> Orange

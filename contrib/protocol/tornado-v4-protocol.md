@@ -137,13 +137,13 @@ Cube begins sending move notifications (EE/DD messages).
 FE 26 04 [session] [27 bytes solved facelets] 00...
 ```
 
-**Solved state facelets (protocol order LRDUFB)**:
+**Solved state facelets (protocol order URFDLB)**:
 ```
-00 00 00 00 10  -- L face (all 0s) + R[0]=1
+33 33 33 33 13  -- U face (all 3s) + R[0]=1
 11 11 11 11     -- R face (all 1s)
-22 22 22 22 32  -- D face (all 2s) + U[0]=3
-33 33 33 33     -- U face (all 3s)
-44 44 44 44 54  -- F face (all 4s) + B[0]=5
+44 44 44 44 24  -- F face (all 4s) + D[0]=2
+22 22 22 22     -- D face (all 2s)
+00 00 00 00 50  -- L face (all 0s) + B[0]=5
 55 55 55 55     -- B face (all 5s)
 ```
 
@@ -173,16 +173,24 @@ This command tells the cube "your current state is now THIS" - used by official 
 
 ### Face Order
 
-**Note**: Different cube variants may use different face orders:
-- **LRDUFB** order (Left, Right, Down, Up, Front, Back) - XMD variant
-- **URFDLB** order (Up, Right, Front, Down, Left, Back) - QiYi variant
+**VERIFIED**: XMD Tornado V4 uses **URFDLB** order (Up, Right, Front, Down, Left, Back).
+
+Previous documentation incorrectly stated LRDUFB - this was corrected based on BLE capture analysis of Reset command.
 
 Each face has 9 facelets in row-major order (top-left to bottom-right).
 
 ### Solved State Pattern
 ```
-Bytes 7-33 from FE 26 response for solved cube:
-33 33 33 33 13 11 11 11 11 44 44 44 44 24 22 22 22 22 00 00 00 00 50 55 55 55 55 00 5A
+Bytes 7-33 from FE 26 response for solved cube (URFDLB order):
+33 33 33 33 13 11 11 11 11 44 44 44 44 24 22 22 22 22 00 00 00 00 50 55 55 55 55
+
+Breakdown:
+33 33 33 33 13  = U face (9× value 3) + R[0]
+11 11 11 11     = R face (9× value 1)
+44 44 44 44 24  = F face (9× value 4) + D[0]
+22 22 22 22     = D face (9× value 2)
+00 00 00 00 50  = L face (9× value 0) + B[0]
+55 55 55 55     = B face (9× value 5)
 ```
 
 ## Move Messages
@@ -344,6 +352,28 @@ CC 10 SS TS TS XX QW QW QX QX QY QY QZ QZ [CRC16]
 - Typical range: -1000 to +1000 per component
 - sqrt(w² + x² + y² + z²) ≈ 1000
 
+### Gyroscope Calibration
+
+**IMPORTANT**: There is NO protocol-level gyroscope calibration command. The cube sends raw IMU orientation data, and calibration must be handled application-side.
+
+**Axis Mapping** (Cube sensor → SceneKit):
+```
+SceneKit.X = -Cube.Z  (OR axis: Orange-Red)
+SceneKit.Y = +Cube.Y  (WY axis: White-Yellow)
+SceneKit.Z = -Cube.X  (GB axis: Green-Blue)
+```
+
+**Quaternion Transformation**:
+```swift
+let displayQuat = simd_quatf(ix: -rawZ, iy: rawY, iz: -rawX, r: rawW)
+```
+
+**Optional Orientation Offset**:
+To set a default "home" orientation (e.g., white up, green front):
+1. Capture current sensor quaternion as reference
+2. Calculate offset: `offset = defaultOrientation × sensorQuaternion⁻¹`
+3. Apply offset to all subsequent readings: `displayQuat = offset × sensorQuat`
+
 ## Checksum
 
 **Algorithm**: CRC-16 MODBUS
@@ -430,7 +460,7 @@ def decrypt(data):
 
 1. **Sequence wraparound**: MUST use mod 100, not mod 256
 2. **Move slots**: Only process `seq_diff` number of slots, not all 3
-3. **Face order**: Different variants use different orders (LRDUFB vs URFDLB)
+3. **Face order**: XMD Tornado V4 uses URFDLB (verified from BLE capture)
 4. **Encryption**: 20-byte messages become 16-byte decrypted payload
 5. **Multi-block**: FE 26 responses need 3-block decryption
 
@@ -452,9 +482,31 @@ def decrypt(data):
 - 180° double moves encoding - are they two consecutive moves or special encoding?
 - Error handling - what happens on invalid commands?
 
+## Tools
+
+### BLE Capture Decoder
+A Python decoder script is available at `contrib/tools/decode_ble_capture.py`:
+
+```bash
+# Decode capture file (excludes gyroscope messages)
+python3 contrib/tools/decode_ble_capture.py capture.txt
+
+# Include all messages (gyroscope, etc.)
+python3 contrib/tools/decode_ble_capture.py capture.txt -a
+
+# Decode single hex string
+python3 contrib/tools/decode_ble_capture.py -x "90 03 BC A1 ..."
+
+# Use alternative key
+python3 contrib/tools/decode_ble_capture.py capture.txt -k alt
+```
+
+Requires: `pip install cryptography` or `pip install pycryptodome`
+
 ## Revision History
 
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2024-01 | Initial documentation |
 | 1.1 | 2025-02 | Corrected sequence range (0-99 mod 100), verified move encoding, added face order variants, added wraparound algorithm, corrected edge rotation directions for U/D/E/y |
+| 1.2 | 2025-02 | Verified face order as URFDLB (not LRDUFB), added gyroscope calibration notes, added BLE decoder tool |
