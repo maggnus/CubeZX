@@ -188,12 +188,19 @@ final class TornadoV4Adapter: NSObject, SmartCubeAdapter {
     private func parseFaceletState(from data: Data) -> CubeState {
         // Extract 27 bytes starting at offset 7
         let faceletData = data.subdata(in: 7..<34)
-        
-        // Protocol face order: WRGYOB (each face has 9 facelets) - White(0), Red(1), Green(2), Yellow(3), Orange(4), Blue(5)
-        // Our face order: UDLRFB (up=0, down=1, left=2, right=3, front=4, back=5)
-        // Protocol nibble value to face: 0=O, 1=R, 2=Y, 3=W, 4=G, 5=B (0=Orange, 1=Red, 2=Yellow, 3=White, 4=Green, 5=Blue)
-        // Protocol face order: W(0), R(1), G(2), Y(3), O(4), B(5) -> Our face order: U(0), D(1), L(2), R(3), F(4), B(5)
-        
+        let ourFacelets = Self.decodeFaceletBytes(faceletData)
+        let hexStr = faceletData.map { String(format: "%02X", $0) }.joined(separator: " ")
+        delegate?.adapter(self, didReceiveDebug: "Cube data: \(hexStr)")
+        let centers = (0..<6).map { idx in ourFacelets[idx * 9 + 4].rawValue }
+        delegate?.adapter(self, didReceiveDebug: "Decoded centers: \(centers.joined(separator: ", "))")
+        let upFace = ourFacelets[0..<9].map { $0.rawValue }.joined(separator: ",")
+        delegate?.adapter(self, didReceiveDebug: "Decoded Up face: \(upFace)")
+        return CubeState(facelets: ourFacelets)
+    }
+
+    /// Decode 27 bytes of facelet payload into our internal 54-facelet array.
+    /// This is exposed as an internal helper so unit tests can verify decoding.
+    static func decodeFaceletBytes(_ faceletData: Data) -> [CubeColor] {
         // Protocol nibble values from documentation:
         // 0=Orange, 1=Red, 2=Yellow, 3=White, 4=Green, 5=Blue
         let protocolNibbleToColor: [CubeColor] = [
@@ -204,40 +211,53 @@ final class TornadoV4Adapter: NSObject, SmartCubeAdapter {
             .green,   // 4 → Green
             .blue     // 5 → Blue
         ]
-        
-        // Parse 54 facelets from 27 bytes
+
+        // Parse 54 facelets from 27 bytes using low-nibble-for-even-indices packing
         var protocolFacelets: [Int] = []
+        protocolFacelets.reserveCapacity(54)
         for i in 0..<54 {
             let byteIndex = i / 2
-            let nibbleShift = (i % 2) * 4  // 0 for even, 4 for odd
+            let nibbleShift = (i % 2) * 4 // low nibble for even indices
             let nibble = Int((faceletData[byteIndex] >> nibbleShift) & 0x0F)
             protocolFacelets.append(nibble)
         }
-        
-        // Protocol order from cube is URFDLB (U=White, R=Red, F=Green, D=Yellow, L=Orange, B=Blue), we need UDLRFB
-        // Remap from protocol face order to our face order
+
+        // Remap protocol face order URFDLB -> internal UDLRFB
+        let protocolFaceToOurIndex: [Int] = [0, 3, 4, 1, 2, 5]
+
+        // Per-face inner-index mapping (0..8) to account for orientation differences
+        // Initialize with empty inner arrays; specific face mappings set below.
+        var faceInnerIndexMap: [[Int]] = Array(repeating: [Int](), count: 6)
+        // Up (white): 3x3 inner-index mapping
+        faceInnerIndexMap[0] = [6, 7, 8, 3, 4, 5, 0, 1, 2]
+        // Down (yellow): 3x3 inner-index mapping
+        faceInnerIndexMap[1] = [6, 7, 8, 3, 4, 5, 0, 1, 2]
+        // Left (orange): user-requested mapping (keeps intended orientation)
+        faceInnerIndexMap[2] = [2, 1, 0, 5, 4, 3, 8, 7, 6]
+        // Right (red): user-requested mapping (keeps intended orientation)
+        faceInnerIndexMap[3] = [2, 1, 0, 5, 4, 3, 8, 7, 6]
+        // Front (green): identity mapping (0..8)
+        faceInnerIndexMap[4] = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+        // Back (blue): identity mapping (0..8)
+        faceInnerIndexMap[5] = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+
         var ourFacelets: [CubeColor] = Array(repeating: .white, count: 54)
-        
-        // Protocol face indices: U=0(White), R=1(Red), F=2(Green), D=3(Yellow), L=4(Orange), B=5(Blue) (URFDLB order)
-        // Our face indices: U=0(White), D=1(Yellow), L=2(Orange), R=3(Red), F=4(Green), B=5(Blue) (UDLRFB order)
-        // Face mapping: Protocol U(0)->Our U(0), R(1)->Our R(3), F(2)->Our F(4), D(3)->Our D(1), L(4)->Our L(2), B(5)->Our B(5)
-        let protocolFaceToOurIndex: [Int] = [0, 3, 4, 1, 2, 5]  // proto face -> our face index (U->0, R->3, F->4, D->1, L->2, B->5)
-        
         for protoFace in 0..<6 {
             let ourFace = protocolFaceToOurIndex[protoFace]
             for i in 0..<9 {
                 let protoIdx = protoFace * 9 + i
-                let ourIdx = ourFace * 9 + i
+                let mappedInner = faceInnerIndexMap[ourFace][i]
+                let ourIdx = ourFace * 9 + mappedInner
                 let colorNibble = protocolFacelets[protoIdx]
-                // Directly use the color mapping
-                ourFacelets[ourIdx] = protocolNibbleToColor[colorNibble]
+                if colorNibble >= 0 && colorNibble < protocolNibbleToColor.count {
+                    ourFacelets[ourIdx] = protocolNibbleToColor[colorNibble]
+                } else {
+                    ourFacelets[ourIdx] = .white
+                }
             }
         }
-        
-        let hexStr = faceletData.map { String(format: "%02X", $0) }.joined(separator: " ")
-        delegate?.adapter(self, didReceiveDebug: "Cube data: \(hexStr)")
-        
-        return CubeState(facelets: ourFacelets)
+
+        return ourFacelets
     }
     
     private func sendHandshakeAckIfNeeded(from data: Data) {
