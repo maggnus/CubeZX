@@ -5,7 +5,7 @@
 This document describes the reverse-engineered Bluetooth Low Energy (BLE) protocol used by the Tornado V4 family of smart cubes (XMD/QiYi). Protocol analysis based on Wireshark captures and app behavior.
 
 **Protocol Version:** 1.1  
-**Last Updated:** February 2025  
+**Last Updated:** February 6, 2026  
 **Status:** VERIFIED
 
 ## Device Information
@@ -160,9 +160,9 @@ This command tells the cube "your current state is now THIS" - used by official 
 | Value | Face | Color |
 |-------|------|-------|
 | 0 | L (Left) | Orange |
-| 1 | R (Right) | Red |
+| 1 | R (Right) | White (NOTE: final mapping observed in-client is 1→White) |
 | 2 | D (Down) | Yellow |
-| 3 | U (Up) | White |
+| 3 | U (Up) | Red (NOTE: final mapping observed in-client is 3→Red) |
 | 4 | F (Front) | Green |
 | 5 | B (Back) | Blue |
 
@@ -171,6 +171,8 @@ This command tells the cube "your current state is now THIS" - used by official 
 - Byte[n] low nibble = facelet[n*2]
 - Byte[n] high nibble = facelet[n*2+1]
 
+**Note:** Low nibble corresponds to the even-index facelet (index 0,2,4...). This low-nibble-for-even-indices packing is important when reassembling 54 facelets from 27 bytes.
+
 ### Face Order
 
 **VERIFIED**: XMD Tornado V4 uses **URFDLB** order (Up, Right, Front, Down, Left, Back).
@@ -178,6 +180,18 @@ This command tells the cube "your current state is now THIS" - used by official 
 Previous documentation incorrectly stated LRDUFB - this was corrected based on BLE capture analysis of Reset command.
 
 Each face has 9 facelets in row-major order (top-left to bottom-right).
+
+### Per-face inner-index mapping (client-side corrections)
+Some client implementations (including `TornadoV4Adapter.swift`) apply a per-face inner-index mapping to correct mirrored/rotated faces observed in raw protocol data. The mapping (applied to internal face indices U,D,L,R,F,B = 0..5) used in reference client is:
+
+- Up (0): [6,7,8,3,4,5,0,1,2]
+- Down (1): [6,7,8,3,4,5,0,1,2]
+- Left (2): [2,1,0,5,4,3,8,7,6]
+- Right (3): [2,1,0,5,4,3,8,7,6]
+- Front (4): [0,1,2,3,4,5,6,7,8]
+- Back (5): [0,1,2,3,4,5,6,7,8]
+
+These maps reorder the 9 facelet positions for each face after remapping protocol face order (URFDLB → internal ordering) to match application internal facelet indexing.
 
 ### Solved State Pattern
 ```
@@ -351,6 +365,8 @@ CC 10 SS TS TS XX QW QW QX QX QY QY QZ QZ [CRC16]
 - Example: `FE 56` = -426 (not 65110)
 - Typical range: -1000 to +1000 per component
 - sqrt(w² + x² + y² + z²) ≈ 1000
+
+**Client notes:** Reference client (`TornadoV4Adapter.swift`) captures the quaternion (signed 16-bit BE scaled ≈1000) and maps axes as above. The client stores the quaternion but, by default, **does not** apply IMU-based face permutation to remap decoded faces into world axes; that permutation logic exists but is currently disabled in the application.
 
 ### Gyroscope Calibration
 
