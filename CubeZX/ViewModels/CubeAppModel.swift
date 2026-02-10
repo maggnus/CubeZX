@@ -410,30 +410,17 @@ extension CubeAppModel: SmartCubeAdapterDelegate {
     }
     
     func adapter(_ adapter: SmartCubeAdapter, didReceiveQuaternion w: Int16, x: Int16, y: Int16, z: Int16) {
-        // Quaternion values are scaled by ~1000
-        let scale: Float = 1.0 / 1000.0
-        let rawW = Float(w) * scale
-        let rawX = Float(x) * scale
-        let rawY = Float(y) * scale
-        let rawZ = Float(z) * scale
-        
-        // DEBUG: Log raw quaternion to determine axis mapping
+        // Raw quaternion callback kept for backwards compatibility.
+        // Prefer receiving corrected orientation via `didReceiveOrientation`.
+    }
+
+    func adapter(_ adapter: SmartCubeAdapter, didReceiveOrientation orientation: simd_quatf) {
+        // Adapter provides device-specific mapped/corrected orientation
+        rawSensorQuat = orientation
         if showGyroDebug {
-            let msg = String(format: "RAW quat: w=%.2f X=%.2f Y=%.2f Z=%.2f", rawW, rawX, rawY, rawZ)
-            logger.info(Logger.Message(stringLiteral: msg), metadata: ["source": .string("GyroTest")])
+            let msg = String(format: "Orient quat: w=%.3f x=%.3f y=%.3f z=%.3f", orientation.real, orientation.imag.x, orientation.imag.y, orientation.imag.z)
+            logger.info(Logger.Message(stringLiteral: msg), metadata: ["component": .string("Sensor")])
         }
-        
-        // Axis mapping from Cube sensor to SceneKit (verified by testing):
-        // SceneKit.X = -Cube.Z (OR axis)
-        // SceneKit.Y = +Cube.Y (WY axis)
-        // SceneKit.Z = -Cube.X (GB axis)
-        // Apply a 180° correction around the front/back (Z) axis to align
-        // the cube view with the decoded facelet orientation.
-        let sensorQuat = simd_quatf(ix: -rawZ, iy: rawY, iz: -rawX, r: rawW)
-        let correction = simd_quatf(angle: Float.pi, axis: simd_float3(0, 0, 1))
-        rawSensorQuat = correction * sensorQuat
-        
-        // Don't update view orientation during user drag - offset is being set by mouse
         if !isUserDragging {
             applyCurrentOrientation()
         }

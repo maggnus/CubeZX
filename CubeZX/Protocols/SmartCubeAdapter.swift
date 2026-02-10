@@ -9,6 +9,8 @@ protocol SmartCubeAdapterDelegate: AnyObject {
     func adapter(_ adapter: SmartCubeAdapter, didUpdateBattery level: Int)
     func adapter(_ adapter: SmartCubeAdapter, didReceiveGyro x: Int16, y: Int16, z: Int16)
     func adapter(_ adapter: SmartCubeAdapter, didReceiveQuaternion w: Int16, x: Int16, y: Int16, z: Int16)
+    // Called when adapter provides a corrected device orientation as a simd quaternion
+    func adapter(_ adapter: SmartCubeAdapter, didReceiveOrientation orientation: simd_quatf)
 }
 
 protocol SmartCubeAdapter: AnyObject {
@@ -34,4 +36,5 @@ extension SmartCubeAdapterDelegate {
     func adapter(_ adapter: SmartCubeAdapter, didUpdateBattery level: Int) {}
     func adapter(_ adapter: SmartCubeAdapter, didReceiveGyro x: Int16, y: Int16, z: Int16) {}
     func adapter(_ adapter: SmartCubeAdapter, didReceiveQuaternion w: Int16, x: Int16, y: Int16, z: Int16) {}
+    func adapter(_ adapter: SmartCubeAdapter, didReceiveOrientation orientation: simd_quatf) {}
 }

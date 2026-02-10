@@ -1,5 +1,6 @@
 import CoreBluetooth
 import Foundation
+import simd
 
 final class TornadoV4Adapter: NSObject, SmartCubeAdapter {
     let id = UUID()
@@ -390,8 +391,27 @@ final class TornadoV4Adapter: NSObject, SmartCubeAdapter {
         let qx = Int16(bitPattern: (UInt16(data[8]) << 8) | UInt16(data[9]))
         let qy = Int16(bitPattern: (UInt16(data[10]) << 8) | UInt16(data[11]))
         let qz = Int16(bitPattern: (UInt16(data[12]) << 8) | UInt16(data[13]))
-        
+
+        // Forward raw quaternion ints for backwards compatibility
         delegate?.adapter(self, didReceiveQuaternion: qw, x: qx, y: qy, z: qz)
+
+        // Convert to float and apply adapter-specific axis mapping and correction
+        let scale: Float = 1.0 / 1000.0
+        let rawW = Float(qw) * scale
+        let rawX = Float(qx) * scale
+        let rawY = Float(qy) * scale
+        let rawZ = Float(qz) * scale
+
+        // Axis mapping from Cube sensor to SceneKit (same mapping previously in model):
+        // SceneKit.X = -Cube.Z, SceneKit.Y = +Cube.Y, SceneKit.Z = -Cube.X
+        let sensorQuat = simd_quatf(ix: -rawZ, iy: rawY, iz: -rawX, r: rawW)
+
+        // Apply device-specific correction (if required): 180° around Z to align
+        // with facelet decoding orientation (kept for TornadoV4 reference client behavior)
+        let correction = simd_quatf(angle: Float.pi, axis: simd_float3(0, 0, 1))
+        let correctedQuat = correction * sensorQuat
+
+        delegate?.adapter(self, didReceiveOrientation: correctedQuat)
     }
     
     private func decodeMove(_ byte: UInt8, seq: UInt8) -> CubeMove? {
