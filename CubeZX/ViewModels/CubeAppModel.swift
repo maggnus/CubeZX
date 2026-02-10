@@ -37,20 +37,10 @@ final class CubeAppModel: ObservableObject {
         }
     }
     
-    // Default orientation: white up, green front, red right with slight left and downward tilt
-    private static let defaultOrientation: simd_quatf = {
-        // Standard orientation: 
-        // U=white, D=yellow (top-bottom)
-        // F=green, B=blue (front-back) 
-        // L=orange, R=red (left-right)
-        // Correction: rotate +90° around X, then -90° around Y, then 180° around Y
-        let rotateX = simd_quatf(angle: Float.pi / 2, axis: simd_float3(1, 0, 0))
-        let rotateY = simd_quatf(angle: -Float.pi / 2 + Float.pi, axis: simd_float3(0, 1, 0))  // -90° + 180° = +90°
-        let baseRotation = rotateY * rotateX
-        let tiltLeft = simd_quatf(angle: -Float.pi / 6, axis: simd_float3(0, 1, 0))      // Tilt left for visibility (clockwise around vertical)
-        let tiltUp = simd_quatf(angle: Float.pi / 8, axis: simd_float3(1, 0, 0))         // Tilt upward for visibility (counter-clockwise around horizontal)
-        return tiltLeft * tiltUp * baseRotation
-    }()
+    // Default orientation: simplest logical baseline (no rotation).
+    // Use identity quaternion so the app starts from a neutral orientation
+    // and any visual adjustments are pure rotations applied later.
+    private static let defaultOrientation: simd_quatf = simd_quatf(angle: 0, axis: simd_float3(0, 1, 0))
     
     // Quaternion orientation from sensor (with user offset applied)
     // Will be initialized to defaultOrientation in init()
@@ -91,6 +81,9 @@ final class CubeAppModel: ObservableObject {
     func onDragEnded() {
         isUserDragging = false
     }
+
+    // Inlined X-axis 90° rotations were previously available as helper methods.
+    // The transformations are now applied directly where needed.
     
     // Reset orientation offset so cube appears at default orientation (white up, red front)
     func resetOrientationOffset() {
@@ -133,6 +126,13 @@ final class CubeAppModel: ObservableObject {
         registerDefaultAdapters()
         activateKeyboardAdapter()
         setupAutoScan()
+        // Apply default red/orange X-axis counter-clockwise 90° rotation so
+        // the view starts with that orientation by default.
+        let xAngle = Float.pi / 2
+        let xRotation = simd_quatf(angle: xAngle, axis: simd_float3(1, 0, 0))
+        userOffset = xRotation * userOffset
+        applyCurrentOrientation()
+        // (Z-axis rotation removed)
     }
     
     private func setupAutoScan() {
