@@ -427,7 +427,11 @@ extension CubeAppModel: SmartCubeAdapterDelegate {
         // SceneKit.X = -Cube.Z (OR axis)
         // SceneKit.Y = +Cube.Y (WY axis)
         // SceneKit.Z = -Cube.X (GB axis)
-        rawSensorQuat = simd_quatf(ix: -rawZ, iy: rawY, iz: -rawX, r: rawW)
+        // Apply a 180° correction around the front/back (Z) axis to align
+        // the cube view with the decoded facelet orientation.
+        let sensorQuat = simd_quatf(ix: -rawZ, iy: rawY, iz: -rawX, r: rawW)
+        let correction = simd_quatf(angle: Float.pi, axis: simd_float3(0, 0, 1))
+        rawSensorQuat = correction * sensorQuat
         
         // Don't update view orientation during user drag - offset is being set by mouse
         if !isUserDragging {
