@@ -1,5 +1,6 @@
 import CoreBluetooth
 import Foundation
+import simd
 
 protocol SmartCubeAdapterDelegate: AnyObject {
     func adapter(_ adapter: SmartCubeAdapter, didUpdateState state: CubeState)
@@ -18,6 +19,9 @@ protocol SmartCubeAdapter: AnyObject {
     var displayName: String { get }
     var serviceUUIDs: [CBUUID] { get }
     var delegate: SmartCubeAdapterDelegate? { get set }
+    // Adapter may expose debug options like showing decoded payloads.
+    // Default implementations are provided so adapters that don't care can ignore it.
+    var showDecodedPayload: Bool { get set }
 
     func matches(peripheral: CBPeripheral, advertisementData: [String: Any]) -> Bool
     func attach(peripheral: CBPeripheral, manager: CBCentralManager)
@@ -30,6 +34,12 @@ protocol SmartCubeAdapter: AnyObject {
 extension SmartCubeAdapter {
     func resync() {}  // Default no-op
     func resetCubeState() {}  // Default no-op
+
+    // Default no-op implementation for adapters that don't expose decoded payload rendering.
+    var showDecodedPayload: Bool {
+        get { return false }
+        set { /* no-op */ }
+    }
 }
 
 extension SmartCubeAdapterDelegate {

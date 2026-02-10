@@ -100,7 +100,13 @@ struct ContentView: View {
             }
             
             if model.isNotationPresented {
-                NotationPopup(onClose: { model.isNotationPresented = false })
+                NotationPopup(
+                    onClose: { model.isNotationPresented = false },
+                    onSelect: { state in
+                        model.cubeState = state
+                        model.isNotationPresented = false
+                    }
+                )
             }
             
             if model.isDebugPresented {

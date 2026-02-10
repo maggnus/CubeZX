@@ -2,13 +2,21 @@ import SwiftUI
 
 struct IsometricCubeStateView: View {
     let moves: [CubeMove]
-    
+    let cubeState: CubeState?
+
     init(moves: [CubeMove] = []) {
         self.moves = moves
+        self.cubeState = nil
     }
-    
+
     init(scramble: String) {
         self.moves = Self.parseMoves(from: scramble)
+        self.cubeState = nil
+    }
+
+    init(state: CubeState) {
+        self.moves = []
+        self.cubeState = state
     }
     
     private static func parseMoves(from scramble: String) -> [CubeMove] {
@@ -144,6 +152,9 @@ struct IsometricCubeStateView: View {
     }
     
     private func computeState() -> VisualCubeState {
+        if let cs = cubeState {
+            return VisualCubeState.from(cubeState: cs)
+        }
         var state = VisualCubeState.solved()
         for move in moves {
             state.apply(move)
@@ -175,6 +186,77 @@ struct VisualCubeState {
             backFace: Array(repeating: Array(repeating: blue, count: 3), count: 3),
             leftFace: Array(repeating: Array(repeating: orange, count: 3), count: 3),
             rightFace: Array(repeating: Array(repeating: red, count: 3), count: 3)
+        )
+    }
+
+    static func from(cubeState: CubeState) -> VisualCubeState {
+        // CubeState.facelets ordering: U(0), D(1), L(2), R(3), F(4), B(5)
+        func face(fromFacelets faceIndex: Int) -> [[Color]] {
+            var grid = Array(repeating: Array(repeating: Color.white, count: 3), count: 3)
+            let start = faceIndex * 9
+            for row in 0..<3 {
+                for col in 0..<3 {
+                    let idx = start + row * 3 + col
+                    let cubeColor = cubeState.facelets[idx]
+                    let color: Color
+                    switch cubeColor {
+                    case .white: color = VisualCubeState.white
+                    case .yellow: color = VisualCubeState.yellow
+                    case .blue: color = VisualCubeState.blue
+                    case .green: color = VisualCubeState.green
+                    case .orange: color = VisualCubeState.orange
+                    case .red: color = VisualCubeState.red
+                    }
+                    grid[row][col] = color
+                }
+            }
+            return grid
+        }
+
+        // Helper: rotate 3x3 grid 90° clockwise
+        func rotateCW(_ g: [[Color]]) -> [[Color]] {
+            var out = Array(repeating: Array(repeating: VisualCubeState.white, count: 3), count: 3)
+            for r in 0..<3 {
+                for c in 0..<3 {
+                    out[c][2 - r] = g[r][c]
+                }
+            }
+            return out
+        }
+
+        // Helper: rotate 3x3 grid 90° counter-clockwise
+        func rotateCCW(_ g: [[Color]]) -> [[Color]] {
+            var out = Array(repeating: Array(repeating: VisualCubeState.white, count: 3), count: 3)
+            for r in 0..<3 {
+                for c in 0..<3 {
+                    out[2 - c][r] = g[r][c]
+                }
+            }
+            return out
+        }
+
+        // Build face grids
+        let up = face(fromFacelets: 0)
+        let down = face(fromFacelets: 1)
+        let left = face(fromFacelets: 2)
+        let right = face(fromFacelets: 3)
+        // Front and back require orientation adjustments so their visual
+        // top/left align with the isometric projection used in the view.
+        let frontRaw = face(fromFacelets: 4)
+        let backRaw = face(fromFacelets: 5)
+
+        // Use raw front/back facelets — previous empirical rotations produced
+        // incorrect (physically impossible) previews for some states.
+        let front = frontRaw
+        let back = backRaw
+
+        return VisualCubeState(
+            upFace: up,
+            downFace: down,
+            frontFace: front,
+            backFace: back,
+            leftFace: left,
+            rightFace: right
         )
     }
     

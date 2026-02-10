@@ -31,9 +31,7 @@ final class CubeAppModel: ObservableObject {
     @Published var showGyroDebug = false
     @Published var showDecodedPayload = false {  // Show decoded message payload
         didSet {
-            if let adapter = activeAdapter as? TornadoV4Adapter {
-                adapter.showDecodedPayload = showDecodedPayload
-            }
+            activeAdapter?.showDecodedPayload = showDecodedPayload
         }
     }
     
@@ -204,9 +202,7 @@ final class CubeAppModel: ObservableObject {
         moveCount = 0  // Reset move counter on new connection
         if let adapter {
             // Pass debug settings to adapter
-            if let tornadoAdapter = adapter as? TornadoV4Adapter {
-                tornadoAdapter.showDecodedPayload = showDecodedPayload
-            }
+            adapter.showDecodedPayload = showDecodedPayload
             bluetoothManager.stopScanning()  // Stop scanning during connection
             adapter.attach(peripheral: peripheral, manager: bluetoothManager.manager())
             isDiscoveryPresented = false
