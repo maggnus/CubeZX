@@ -49,6 +49,19 @@ struct ContentView: View {
                 }
             }
 
+            // Live isometric preview bound to the app's `cubeState`.
+            VStack {
+                HStack {
+                    Spacer()
+                    IsometricCubeStateView(state: model.cubeState)
+                        .frame(width: 140, height: 140)
+                        .background(.ultraThinMaterial)
+                        .cornerRadius(8)
+                        .padding()
+                }
+                Spacer()
+            }
+
             VStack {
                 HStack {
                     Button(action: { model.startDiscovery() }) {
