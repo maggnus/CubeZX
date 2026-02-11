@@ -1,584 +1,128 @@
+
 import SwiftUI
 
+/// Isometric renderer for CubeState: draws Up, Right, Front faces only.
 struct IsometricCubeStateView: View {
-    let moves: [CubeMove]
-    let cubeState: CubeState?
-
-    init(moves: [CubeMove] = []) {
-        self.moves = moves
-        self.cubeState = nil
-    }
-
-    init(scramble: String) {
-        self.moves = Self.parseMoves(from: scramble)
-        self.cubeState = nil
-    }
+    let state: CubeState
 
     init(state: CubeState) {
-        self.moves = []
-        self.cubeState = state
+        self.state = state
     }
-    
-    private static func parseMoves(from scramble: String) -> [CubeMove] {
-        let tokens = scramble.split(separator: " ").map { String($0) }
-        var result: [CubeMove] = []
-        
-        for token in tokens {
-            if let move = parseMove(token) {
-                result.append(move)
-            }
-        }
-        return result
-    }
-    
-    private static func parseMove(_ notation: String) -> CubeMove? {
-        guard !notation.isEmpty else { return nil }
-        
-        let isPrime = notation.contains("'")
-        let isDouble = notation.contains("2")
-        let direction: CubeMoveDirection = isDouble ? .double : (isPrime ? .counterClockwise : .clockwise)
-        
-        let base = notation.replacingOccurrences(of: "'", with: "").replacingOccurrences(of: "2", with: "")
-        
-        switch base {
-        case "R": return CubeMove(face: .right, direction: direction)
-        case "L": return CubeMove(face: .left, direction: direction)
-        case "U": return CubeMove(face: .up, direction: direction)
-        case "D": return CubeMove(face: .down, direction: direction)
-        case "F": return CubeMove(face: .front, direction: direction)
-        case "B": return CubeMove(face: .back, direction: direction)
-        case "M": return CubeMove(slice: .middle, direction: direction)
-        case "E": return CubeMove(slice: .equator, direction: direction)
-        case "S": return CubeMove(slice: .standing, direction: direction)
-        case "X", "x": return CubeMove(rotation: .x, direction: direction)
-        case "Y", "y": return CubeMove(rotation: .y, direction: direction)
-        case "Z", "z": return CubeMove(rotation: .z, direction: direction)
-        case "r": return CubeMove(wide: .rightWide, direction: direction)
-        case "l": return CubeMove(wide: .leftWide, direction: direction)
-        case "u": return CubeMove(wide: .upWide, direction: direction)
-        case "d": return CubeMove(wide: .downWide, direction: direction)
-        case "f": return CubeMove(wide: .frontWide, direction: direction)
-        case "b": return CubeMove(wide: .backWide, direction: direction)
-        default: return nil
-        }
-    }
-    
+
     var body: some View {
-        Canvas { context, size in
-            let state = computeState()
-            let s = min(size.width, size.height)
-            let cx = size.width / 2
-            let cy = size.height / 2 + s * 0.05
-            let unit = s * 0.11
-            
-            let iso: (CGFloat, CGFloat, CGFloat) -> CGPoint = { x, y, z in
-                CGPoint(
-                    x: cx + (x - z) * 0.866 * unit,
-                    y: cy - y * unit + (x + z) * 0.5 * unit
-                )
-            }
-            
-            for row in 0..<3 {
-                for col in 0..<3 {
-                    let x = CGFloat(col - 1)
-                    let z = CGFloat(row - 1)
-                    
-                    let tl = iso(x - 0.45, 1.5, z - 0.45)
-                    let tr = iso(x + 0.45, 1.5, z - 0.45)
-                    let bl = iso(x - 0.45, 1.5, z + 0.45)
-                    let br = iso(x + 0.45, 1.5, z + 0.45)
-                    
-                    var path = Path()
-                    path.move(to: tl)
-                    path.addLine(to: tr)
-                    path.addLine(to: br)
-                    path.addLine(to: bl)
-                    path.closeSubpath()
-                    
-                    let color = state.upFace[row][col]
-                    context.fill(path, with: .color(color))
-                    context.stroke(path, with: .color(.black.opacity(0.6)), lineWidth: 0.5)
-                }
-            }
-            
-            for row in 0..<3 {
-                for col in 0..<3 {
-                    let x: CGFloat = 1.5
-                    let y = CGFloat(1 - row)
-                    let z = CGFloat(col - 1)
-                    
-                    let tl = iso(x, y + 0.45, z - 0.45)
-                    let tr = iso(x, y + 0.45, z + 0.45)
-                    let bl = iso(x, y - 0.45, z - 0.45)
-                    let br = iso(x, y - 0.45, z + 0.45)
-                    
-                    var path = Path()
-                    path.move(to: tl)
-                    path.addLine(to: tr)
-                    path.addLine(to: br)
-                    path.addLine(to: bl)
-                    path.closeSubpath()
-                    
-                    let color = state.rightFace[row][col]
-                    context.fill(path, with: .color(color))
-                    context.stroke(path, with: .color(.black.opacity(0.6)), lineWidth: 0.5)
-                }
-            }
-            
-            for row in 0..<3 {
-                for col in 0..<3 {
-                    let x = CGFloat(col - 1)
-                    let y = CGFloat(1 - row)
-                    let z: CGFloat = 1.5
-                    
-                    let tl = iso(x - 0.45, y + 0.45, z)
-                    let tr = iso(x + 0.45, y + 0.45, z)
-                    let bl = iso(x - 0.45, y - 0.45, z)
-                    let br = iso(x + 0.45, y - 0.45, z)
-                    
-                    var path = Path()
-                    path.move(to: tl)
-                    path.addLine(to: tr)
-                    path.addLine(to: br)
-                    path.addLine(to: bl)
-                    path.closeSubpath()
-                    
-                    let color = state.frontFace[row][col]
-                    context.fill(path, with: .color(color))
-                    context.stroke(path, with: .color(.black.opacity(0.6)), lineWidth: 0.5)
-                }
-            }
-        }
-    }
-    
-    private func computeState() -> VisualCubeState {
-        if let cs = cubeState {
-            return VisualCubeState.from(cubeState: cs)
-        }
-        var state = VisualCubeState.solved()
-        for move in moves {
-            state.apply(move)
-        }
-        return state
-    }
-}
+        GeometryReader { proxy in
+            Canvas { context, size in
+                let s = min(size.width, size.height)
+                let cx = size.width / 2
+                let cy = size.height / 2 + s * 0.04
+                let unit = s * 0.12
 
-struct VisualCubeState {
-    var upFace: [[Color]]
-    var downFace: [[Color]]
-    var frontFace: [[Color]]
-    var backFace: [[Color]]
-    var leftFace: [[Color]]
-    var rightFace: [[Color]]
-    
-    static let yellow = Color.yellow
-    static let white = Color.white
-    static let blue = Color.blue
-    static let green = Color.green
-    static let orange = Color.orange
-    static let red = Color.red
-    
-    static func solved() -> VisualCubeState {
-        VisualCubeState(
-            upFace: Array(repeating: Array(repeating: white, count: 3), count: 3),
-            downFace: Array(repeating: Array(repeating: yellow, count: 3), count: 3),
-            frontFace: Array(repeating: Array(repeating: green, count: 3), count: 3),
-            backFace: Array(repeating: Array(repeating: blue, count: 3), count: 3),
-            leftFace: Array(repeating: Array(repeating: orange, count: 3), count: 3),
-            rightFace: Array(repeating: Array(repeating: red, count: 3), count: 3)
-        )
-    }
+                let iso: (CGFloat, CGFloat, CGFloat) -> CGPoint = { x, y, z in
+                    CGPoint(
+                        x: cx + (x - z) * 0.866 * unit,
+                        y: cy - y * unit + (x + z) * 0.5 * unit
+                    )
+                }
 
-    static func from(cubeState: CubeState) -> VisualCubeState {
-        // CubeState.facelets ordering: U(0), D(1), L(2), R(3), F(4), B(5)
-        func face(fromFacelets faceIndex: Int) -> [[Color]] {
-            var grid = Array(repeating: Array(repeating: Color.white, count: 3), count: 3)
-            let start = faceIndex * 9
-            for row in 0..<3 {
-                for col in 0..<3 {
-                    let idx = start + row * 3 + col
-                    let cubeColor = cubeState.facelets[idx]
-                    let color: Color
-                    switch cubeColor {
-                    case .white: color = VisualCubeState.white
-                    case .yellow: color = VisualCubeState.yellow
-                    case .blue: color = VisualCubeState.blue
-                    case .green: color = VisualCubeState.green
-                    case .orange: color = VisualCubeState.orange
-                    case .red: color = VisualCubeState.red
+                // Up face (U, indices 0..8)
+                // 3D logic: row = z + 1 (z=1 front->row=2, z=-1 back->row=0), col = x + 1
+                for z in (-1...1) {
+                    for x in (-1...1) {
+                        let row = z + 1
+                        let col = x + 1
+                        let faceletIndex = 0 * 9 + row * 3 + col
+                        let tl = iso(CGFloat(x) - 0.45, 1.5, CGFloat(z) - 0.45)
+                        let tr = iso(CGFloat(x) + 0.45, 1.5, CGFloat(z) - 0.45)
+                        let bl = iso(CGFloat(x) - 0.45, 1.5, CGFloat(z) + 0.45)
+                        let br = iso(CGFloat(x) + 0.45, 1.5, CGFloat(z) + 0.45)
+
+                        var path = Path()
+                        path.move(to: tl)
+                        path.addLine(to: tr)
+                        path.addLine(to: br)
+                        path.addLine(to: bl)
+                        path.closeSubpath()
+
+                        let color = colorForFacelet(state.facelets[faceletIndex])
+                        context.fill(path, with: .color(color))
+                        context.stroke(path, with: .color(.black.opacity(0.6)), lineWidth: 0.5)
                     }
-                    grid[row][col] = color
+                }
+
+                // Right face (R, indices 27..35)
+                // 3D logic: row = 1 - y, col = 1 - z (z=1 front->col=0, z=-1 back->col=2)
+                for y in (-1...1) {
+                    for z in (-1...1) {
+                        let row = 1 - y
+                        let col = 1 - z
+                        let faceletIndex = 3 * 9 + row * 3 + col
+                        let x: CGFloat = 1.5
+                        let tl = iso(x, CGFloat(y) + 0.45, CGFloat(z) - 0.45)
+                        let tr = iso(x, CGFloat(y) + 0.45, CGFloat(z) + 0.45)
+                        let bl = iso(x, CGFloat(y) - 0.45, CGFloat(z) - 0.45)
+                        let br = iso(x, CGFloat(y) - 0.45, CGFloat(z) + 0.45)
+
+                        var path = Path()
+                        path.move(to: tl)
+                        path.addLine(to: tr)
+                        path.addLine(to: br)
+                        path.addLine(to: bl)
+                        path.closeSubpath()
+
+                        let color = colorForFacelet(state.facelets[faceletIndex])
+                        context.fill(path, with: .color(color))
+                        context.stroke(path, with: .color(.black.opacity(0.6)), lineWidth: 0.5)
+                    }
+                }
+
+                // Front face (F, indices 36..44)
+                // 3D logic: row = 1 - y, col = x + 1
+                for y in (-1...1) {
+                    for x in (-1...1) {
+                        let row = 1 - y
+                        let col = x + 1
+                        let faceletIndex = 4 * 9 + row * 3 + col
+                        let z: CGFloat = 1.5
+                        let tl = iso(CGFloat(x) - 0.45, CGFloat(y) + 0.45, z)
+                        let tr = iso(CGFloat(x) + 0.45, CGFloat(y) + 0.45, z)
+                        let bl = iso(CGFloat(x) - 0.45, CGFloat(y) - 0.45, z)
+                        let br = iso(CGFloat(x) + 0.45, CGFloat(y) - 0.45, z)
+
+                        var path = Path()
+                        path.move(to: tl)
+                        path.addLine(to: tr)
+                        path.addLine(to: br)
+                        path.addLine(to: bl)
+                        path.closeSubpath()
+
+                        let color = colorForFacelet(state.facelets[faceletIndex])
+                        context.fill(path, with: .color(color))
+                        context.stroke(path, with: .color(.black.opacity(0.6)), lineWidth: 0.5)
+                    }
                 }
             }
-            return grid
         }
+    }
 
-        // Helper: rotate 3x3 grid 90° clockwise
-        func rotateCW(_ g: [[Color]]) -> [[Color]] {
-            var out = Array(repeating: Array(repeating: VisualCubeState.white, count: 3), count: 3)
-            for r in 0..<3 {
-                for c in 0..<3 {
-                    out[c][2 - r] = g[r][c]
-                }
-            }
-            return out
-        }
-
-        // Helper: rotate 3x3 grid 90° counter-clockwise
-        func rotateCCW(_ g: [[Color]]) -> [[Color]] {
-            var out = Array(repeating: Array(repeating: VisualCubeState.white, count: 3), count: 3)
-            for r in 0..<3 {
-                for c in 0..<3 {
-                    out[2 - c][r] = g[r][c]
-                }
-            }
-            return out
-        }
-
-        // Build face grids
-        let up = face(fromFacelets: 0)
-        let down = face(fromFacelets: 1)
-        let left = face(fromFacelets: 2)
-        let right = face(fromFacelets: 3)
-        // Front and back require orientation adjustments so their visual
-        // top/left align with the isometric projection used in the view.
-        let frontRaw = face(fromFacelets: 4)
-        let backRaw = face(fromFacelets: 5)
-
-        // Use raw front/back facelets — previous empirical rotations produced
-        // incorrect (physically impossible) previews for some states.
-        let front = frontRaw
-        let back = backRaw
-
-        return VisualCubeState(
-            upFace: up,
-            downFace: down,
-            frontFace: front,
-            backFace: back,
-            leftFace: left,
-            rightFace: right
-        )
-    }
-    
-    mutating func apply(_ move: CubeMove) {
-        let times = move.direction == .double ? 2 : 1
-        let clockwise = move.direction != .counterClockwise
-        
-        for _ in 0..<times {
-            switch move.moveType {
-            case .face(let face):
-                applyFaceMove(face, clockwise: clockwise)
-            case .slice(let slice):
-                applySliceMove(slice, clockwise: clockwise)
-            case .rotation(let rotation):
-                applyRotation(rotation, clockwise: clockwise)
-            case .wide(let wide):
-                applyWideMove(wide, clockwise: clockwise)
-            }
-        }
-    }
-    
-    private mutating func applyFaceMove(_ face: CubeMoveFace, clockwise: Bool) {
-        switch face {
-        case .right:
-            rotateFaceCW(&rightFace, clockwise: clockwise)
-            let temp = [upFace[0][2], upFace[1][2], upFace[2][2]]
-            if clockwise {
-                for i in 0..<3 { upFace[i][2] = frontFace[i][2] }
-                for i in 0..<3 { frontFace[i][2] = downFace[i][2] }
-                for i in 0..<3 { downFace[i][2] = backFace[2-i][0] }
-                for i in 0..<3 { backFace[i][0] = temp[2-i] }
-            } else {
-                for i in 0..<3 { upFace[i][2] = backFace[2-i][0] }
-                for i in 0..<3 { backFace[i][0] = downFace[2-i][2] }
-                for i in 0..<3 { downFace[i][2] = frontFace[i][2] }
-                for i in 0..<3 { frontFace[i][2] = temp[i] }
-            }
-            
-        case .left:
-            rotateFaceCW(&leftFace, clockwise: clockwise)
-            let temp = [upFace[0][0], upFace[1][0], upFace[2][0]]
-            if clockwise {
-                for i in 0..<3 { upFace[i][0] = backFace[2-i][2] }
-                for i in 0..<3 { backFace[i][2] = downFace[2-i][0] }
-                for i in 0..<3 { downFace[i][0] = frontFace[i][0] }
-                for i in 0..<3 { frontFace[i][0] = temp[i] }
-            } else {
-                for i in 0..<3 { upFace[i][0] = frontFace[i][0] }
-                for i in 0..<3 { frontFace[i][0] = downFace[i][0] }
-                for i in 0..<3 { downFace[i][0] = backFace[2-i][2] }
-                for i in 0..<3 { backFace[i][2] = temp[2-i] }
-            }
-            
-        case .up:
-            rotateFaceCW(&upFace, clockwise: clockwise)
-            let temp = frontFace[0]
-            if clockwise {
-                // U clockwise: F→L→B→R→F (pieces move counterclockwise when viewed from above)
-                frontFace[0] = leftFace[0]
-                leftFace[0] = backFace[0]
-                backFace[0] = rightFace[0]
-                rightFace[0] = temp
-            } else {
-                // U counterclockwise: F→R→B→L→F
-                frontFace[0] = rightFace[0]
-                rightFace[0] = backFace[0]
-                backFace[0] = leftFace[0]
-                leftFace[0] = temp
-            }
-            
-        case .down:
-            rotateFaceCW(&downFace, clockwise: clockwise)
-            let temp = frontFace[2]
-            if clockwise {
-                // D clockwise: F→R→B→L→F (pieces move clockwise when viewed from below)
-                frontFace[2] = rightFace[2]
-                rightFace[2] = backFace[2]
-                backFace[2] = leftFace[2]
-                leftFace[2] = temp
-            } else {
-                // D counterclockwise: F→L→B→R→F
-                frontFace[2] = leftFace[2]
-                leftFace[2] = backFace[2]
-                backFace[2] = rightFace[2]
-                rightFace[2] = temp
-            }
-            
-        case .front:
-            rotateFaceCW(&frontFace, clockwise: clockwise)
-            let tempU = upFace[2]
-            if clockwise {
-                upFace[2] = [leftFace[2][2], leftFace[1][2], leftFace[0][2]]
-                leftFace[0][2] = downFace[0][0]
-                leftFace[1][2] = downFace[0][1]
-                leftFace[2][2] = downFace[0][2]
-                downFace[0] = [rightFace[2][0], rightFace[1][0], rightFace[0][0]]
-                rightFace[0][0] = tempU[0]
-                rightFace[1][0] = tempU[1]
-                rightFace[2][0] = tempU[2]
-            } else {
-                upFace[2] = [rightFace[0][0], rightFace[1][0], rightFace[2][0]]
-                rightFace[0][0] = downFace[0][2]
-                rightFace[1][0] = downFace[0][1]
-                rightFace[2][0] = downFace[0][0]
-                downFace[0] = [leftFace[0][2], leftFace[1][2], leftFace[2][2]]
-                leftFace[0][2] = tempU[2]
-                leftFace[1][2] = tempU[1]
-                leftFace[2][2] = tempU[0]
-            }
-            
-        case .back:
-            rotateFaceCW(&backFace, clockwise: clockwise)
-            let tempU = upFace[0]
-            if clockwise {
-                upFace[0] = [rightFace[0][2], rightFace[1][2], rightFace[2][2]]
-                rightFace[0][2] = downFace[2][2]
-                rightFace[1][2] = downFace[2][1]
-                rightFace[2][2] = downFace[2][0]
-                downFace[2] = [leftFace[0][0], leftFace[1][0], leftFace[2][0]]
-                leftFace[0][0] = tempU[2]
-                leftFace[1][0] = tempU[1]
-                leftFace[2][0] = tempU[0]
-            } else {
-                upFace[0] = [leftFace[2][0], leftFace[1][0], leftFace[0][0]]
-                leftFace[0][0] = downFace[2][0]
-                leftFace[1][0] = downFace[2][1]
-                leftFace[2][0] = downFace[2][2]
-                downFace[2] = [rightFace[2][2], rightFace[1][2], rightFace[0][2]]
-                rightFace[0][2] = tempU[0]
-                rightFace[1][2] = tempU[1]
-                rightFace[2][2] = tempU[2]
-            }
-        }
-    }
-    
-    private mutating func applySliceMove(_ slice: CubeSliceMove, clockwise: Bool) {
-        switch slice {
-        case .middle:
-            let temp = [upFace[0][1], upFace[1][1], upFace[2][1]]
-            if clockwise {
-                for i in 0..<3 { upFace[i][1] = backFace[2-i][1] }
-                for i in 0..<3 { backFace[i][1] = downFace[2-i][1] }
-                for i in 0..<3 { downFace[i][1] = frontFace[i][1] }
-                for i in 0..<3 { frontFace[i][1] = temp[i] }
-            } else {
-                for i in 0..<3 { upFace[i][1] = frontFace[i][1] }
-                for i in 0..<3 { frontFace[i][1] = downFace[i][1] }
-                for i in 0..<3 { downFace[i][1] = backFace[2-i][1] }
-                for i in 0..<3 { backFace[i][1] = temp[2-i] }
-            }
-            
-        case .equator:
-            // E follows D direction: clockwise moves F→R→B→L→F
-            let temp = frontFace[1]
-            if clockwise {
-                frontFace[1] = rightFace[1]
-                rightFace[1] = backFace[1]
-                backFace[1] = leftFace[1]
-                leftFace[1] = temp
-            } else {
-                frontFace[1] = leftFace[1]
-                leftFace[1] = backFace[1]
-                backFace[1] = rightFace[1]
-                rightFace[1] = temp
-            }
-            
-        case .standing:
-            let tempU = upFace[1]
-            if clockwise {
-                upFace[1] = [leftFace[2][1], leftFace[1][1], leftFace[0][1]]
-                leftFace[0][1] = downFace[1][0]
-                leftFace[1][1] = downFace[1][1]
-                leftFace[2][1] = downFace[1][2]
-                downFace[1] = [rightFace[2][1], rightFace[1][1], rightFace[0][1]]
-                rightFace[0][1] = tempU[0]
-                rightFace[1][1] = tempU[1]
-                rightFace[2][1] = tempU[2]
-            } else {
-                upFace[1] = [rightFace[0][1], rightFace[1][1], rightFace[2][1]]
-                rightFace[0][1] = downFace[1][2]
-                rightFace[1][1] = downFace[1][1]
-                rightFace[2][1] = downFace[1][0]
-                downFace[1] = [leftFace[0][1], leftFace[1][1], leftFace[2][1]]
-                leftFace[0][1] = tempU[2]
-                leftFace[1][1] = tempU[1]
-                leftFace[2][1] = tempU[0]
-            }
-        }
-    }
-    
-    private mutating func applyRotation(_ rotation: CubeRotation, clockwise: Bool) {
-        switch rotation {
-        case .x:
-            if clockwise {
-                var temp = upFace
-                upFace = frontFace
-                frontFace = downFace
-                rotateFaceCW(&backFace, clockwise: true)
-                rotateFaceCW(&backFace, clockwise: true)
-                downFace = backFace
-                rotateFaceCW(&temp, clockwise: true)
-                rotateFaceCW(&temp, clockwise: true)
-                backFace = temp
-                rotateFaceCW(&rightFace, clockwise: true)
-                rotateFaceCW(&leftFace, clockwise: false)
-            } else {
-                var temp = upFace
-                rotateFaceCW(&backFace, clockwise: true)
-                rotateFaceCW(&backFace, clockwise: true)
-                upFace = backFace
-                backFace = downFace
-                rotateFaceCW(&backFace, clockwise: true)
-                rotateFaceCW(&backFace, clockwise: true)
-                downFace = frontFace
-                frontFace = temp
-                rotateFaceCW(&rightFace, clockwise: false)
-                rotateFaceCW(&leftFace, clockwise: true)
-            }
-            
-        case .y:
-            // y follows U direction: clockwise moves F→L→B→R→F
-            if clockwise {
-                let temp = frontFace
-                frontFace = leftFace
-                leftFace = backFace
-                backFace = rightFace
-                rightFace = temp
-                rotateFaceCW(&upFace, clockwise: true)
-                rotateFaceCW(&downFace, clockwise: false)
-            } else {
-                let temp = frontFace
-                frontFace = rightFace
-                rightFace = backFace
-                backFace = leftFace
-                leftFace = temp
-                rotateFaceCW(&upFace, clockwise: false)
-                rotateFaceCW(&downFace, clockwise: true)
-            }
-            
-        case .z:
-            if clockwise {
-                let temp = upFace
-                upFace = leftFace
-                rotateFaceCW(&upFace, clockwise: true)
-                leftFace = downFace
-                rotateFaceCW(&leftFace, clockwise: true)
-                downFace = rightFace
-                rotateFaceCW(&downFace, clockwise: true)
-                rightFace = temp
-                rotateFaceCW(&rightFace, clockwise: true)
-                rotateFaceCW(&frontFace, clockwise: true)
-                rotateFaceCW(&backFace, clockwise: false)
-            } else {
-                let temp = upFace
-                upFace = rightFace
-                rotateFaceCW(&upFace, clockwise: false)
-                rightFace = downFace
-                rotateFaceCW(&rightFace, clockwise: false)
-                downFace = leftFace
-                rotateFaceCW(&downFace, clockwise: false)
-                leftFace = temp
-                rotateFaceCW(&leftFace, clockwise: false)
-                rotateFaceCW(&frontFace, clockwise: false)
-                rotateFaceCW(&backFace, clockwise: true)
-            }
-        }
-    }
-    
-    private mutating func applyWideMove(_ wide: CubeWideFace, clockwise: Bool) {
-        switch wide {
-        case .rightWide:
-            applyFaceMove(.right, clockwise: clockwise)
-            applySliceMove(.middle, clockwise: !clockwise)
-        case .leftWide:
-            applyFaceMove(.left, clockwise: clockwise)
-            applySliceMove(.middle, clockwise: clockwise)
-        case .upWide:
-            applyFaceMove(.up, clockwise: clockwise)
-            applySliceMove(.equator, clockwise: !clockwise)
-        case .downWide:
-            applyFaceMove(.down, clockwise: clockwise)
-            applySliceMove(.equator, clockwise: clockwise)
-        case .frontWide:
-            applyFaceMove(.front, clockwise: clockwise)
-            applySliceMove(.standing, clockwise: clockwise)
-        case .backWide:
-            applyFaceMove(.back, clockwise: clockwise)
-            applySliceMove(.standing, clockwise: !clockwise)
-        }
-    }
-    
-    private func rotateFaceCW(_ face: inout [[Color]], clockwise: Bool) {
-        let original = face
-        if clockwise {
-            for i in 0..<3 {
-                for j in 0..<3 {
-                    face[j][2-i] = original[i][j]
-                }
-            }
-        } else {
-            for i in 0..<3 {
-                for j in 0..<3 {
-                    face[2-j][i] = original[i][j]
-                }
-            }
+    private func colorForFacelet(_ f: CubeColor) -> Color {
+        switch f {
+        case .white: return .white
+        case .yellow: return .yellow
+        case .blue: return .blue
+        case .green: return .green
+        case .orange: return .orange
+        case .red: return .red
         }
     }
 }
 
-#Preview {
-    VStack(spacing: 20) {
-        Text("Solved")
-        IsometricCubeStateView()
-            .frame(width: 100, height: 100)
-        
-        Text("R U R' U'")
-        IsometricCubeStateView(scramble: "R U R' U'")
-            .frame(width: 100, height: 100)
-        
-        Text("Superflip")
-        IsometricCubeStateView(scramble: "U R2 F B R B2 R U2 L B2 R U' D' R2 F R' L B2 U2 F2")
-            .frame(width: 100, height: 100)
+#if DEBUG
+struct IsometricCubeStateView_Previews: PreviewProvider {
+    static var previews: some View {
+        let cs = CubeState.solved()
+        IsometricCubeStateView(state: cs)
+            .frame(width: 220, height: 220)
+            .padding()
     }
-    .padding()
 }
+#endif

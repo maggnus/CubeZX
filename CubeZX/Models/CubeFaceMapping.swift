@@ -1,8 +1,8 @@
 import Foundation
 
 struct CubeFaceMapping {
-    var front: CubeMoveFace = .front
-    var back: CubeMoveFace = .back
+    var front: CubeMoveFace = .back
+    var back: CubeMoveFace = .front
     var up: CubeMoveFace = .up
     var down: CubeMoveFace = .down
     var left: CubeMoveFace = .left

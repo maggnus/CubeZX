@@ -94,9 +94,9 @@ struct CubeState: Codable, Equatable {
         
         switch cubeFace {
         case .up:
-            edges = [(.front, [0,1,2]), (.right, [0,1,2]), (.back, [0,1,2]), (.left, [0,1,2])]
+            edges = [(.front, [0,1,2]), (.left, [0,1,2]), (.back, [0,1,2]), (.right, [0,1,2])]
         case .down:
-            edges = [(.front, [6,7,8]), (.left, [6,7,8]), (.back, [6,7,8]), (.right, [6,7,8])]
+            edges = [(.front, [6,7,8]), (.right, [6,7,8]), (.back, [6,7,8]), (.left, [6,7,8])]
         case .front:
             edges = [(.up, [6,7,8]), (.right, [0,3,6]), (.down, [2,1,0]), (.left, [8,5,2])]
         case .back:

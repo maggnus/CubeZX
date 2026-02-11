@@ -97,6 +97,8 @@ struct ContentView: View {
                         Image(systemName: "arrow.triangle.2.circlepath")
                     }
                     .buttonStyle(.borderedProminent)
+
+
                     
                     Spacer()
 
@@ -186,6 +188,8 @@ struct ContentView: View {
         }
         return .ignored
     }
+
+
 }
 
 @available(macOS 14.0, *)
