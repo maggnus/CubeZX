@@ -5,19 +5,22 @@
 //  Created by Maksim Korenev on 28/1/26.
 //
 
-import SwiftUI
 import Logging
+import SwiftUI
 
 @available(macOS 14.0, *)
 struct ContentView: View {
     @StateObject private var model = CubeAppModel()
-    
+
     private let logger = Logger(label: "com.qwibi.cubezx.\(ContentView.self)")
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Color.black, Color.blue.opacity(0.6)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                .ignoresSafeArea()
+            LinearGradient(
+                colors: [Color.black, Color.blue.opacity(0.6)], startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
 
             GeometryReader { geo in
                 ZStack {
@@ -35,31 +38,19 @@ struct ContentView: View {
                         onStateSyncComplete: model.onStateSyncComplete,
                         onUserInteraction: model.onUserInteraction,
                         onDragUpdate: { x, y, z, w in
-                            model.updateUserOffset(viewQuatX: x, viewQuatY: y, viewQuatZ: z, viewQuatW: w)
+                            model.updateUserOffset(
+                                viewQuatX: x, viewQuatY: y, viewQuatZ: z, viewQuatW: w)
                         },
                         onDragEnd: model.onDragEnded
                     )
                     .frame(width: geo.size.width, height: geo.size.height)
-                    
+
                     if model.isDebugModeEnabled && model.showDebugOverlay {
                         DebugTerminalOverlay()
                         CubeInfoOverlay(model: model)
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
                 }
-            }
-
-            // Live isometric preview bound to the app's `cubeState`.
-            VStack {
-                HStack {
-                    Spacer()
-                    IsometricCubeStateView(state: model.cubeState)
-                        .frame(width: 140, height: 140)
-                        .background(.ultraThinMaterial)
-                        .cornerRadius(8)
-                        .padding()
-                }
-                Spacer()
             }
 
             VStack {
@@ -69,7 +60,7 @@ struct ContentView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .padding()
-                    
+
                     ConnectionStatusView(model: model)
 
                     Spacer()
@@ -78,7 +69,7 @@ struct ContentView: View {
                         Image(systemName: "n.circle")
                     }
                     .buttonStyle(.borderedProminent)
-                    
+
                     Button(action: { model.isDebugPresented.toggle() }) {
                         Image(systemName: model.isDebugPresented ? "ladybug.fill" : "ladybug")
                     }
@@ -92,14 +83,12 @@ struct ContentView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .padding(.leading)
-                    
+
                     Button(action: { model.resyncCube() }) {
                         Image(systemName: "arrow.triangle.2.circlepath")
                     }
                     .buttonStyle(.borderedProminent)
 
-
-                    
                     Spacer()
 
                     Button(action: {}) {
@@ -113,7 +102,7 @@ struct ContentView: View {
             if model.isDiscoveryPresented {
                 DiscoveryPopup(model: model)
             }
-            
+
             if model.isNotationPresented {
                 NotationPopup(
                     onClose: { model.isNotationPresented = false },
@@ -123,7 +112,7 @@ struct ContentView: View {
                     }
                 )
             }
-            
+
             if model.isDebugPresented {
                 DebugPopup(
                     isDebugEnabled: $model.isDebugModeEnabled,
@@ -152,7 +141,7 @@ struct ContentView: View {
 
         var move: CubeMove?
         let mapping = model.faceMapping
-        
+
         switch letter {
         case "L": move = CubeMove(face: mapping.actualFace(for: .left), direction: direction)
         case "R": move = CubeMove(face: mapping.actualFace(for: .right), direction: direction)
@@ -188,7 +177,6 @@ struct ContentView: View {
         }
         return .ignored
     }
-
 
 }
 
