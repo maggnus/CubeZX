@@ -7,16 +7,26 @@ final class KeyboardCubeAdapter: SmartCubeAdapter {
     let serviceUUIDs: [CBUUID] = []
     weak var delegate: SmartCubeAdapterDelegate?
 
+    private var isConnected = false
+
     func matches(peripheral: CBPeripheral, advertisementData: [String: Any]) -> Bool {
         false
     }
 
+    func activate() {
+        isConnected = true
+        delegate?.adapter(self, didChangeConnection: true)
+        delegate?.adapter(self, didReceiveDebug: "Keyboard adapter activated")
+    }
+
     func attach(peripheral: CBPeripheral, manager: CBCentralManager) {
+        isConnected = true
         delegate?.adapter(self, didChangeConnection: true)
         delegate?.adapter(self, didReceiveDebug: "Keyboard adapter activated")
     }
 
     func detach() {
+        isConnected = false
         delegate?.adapter(self, didChangeConnection: false)
     }
 
@@ -24,6 +34,11 @@ final class KeyboardCubeAdapter: SmartCubeAdapter {
     }
 
     func sendMove(_ move: CubeMove) {
+        guard isConnected else {
+            print("Keyboard adapter not connected, ignoring move: \(move.notation)")
+            return
+        }
+        print("Keyboard adapter sending move: \(move.notation)")
         delegate?.adapter(self, didReceiveMove: move)
     }
 }

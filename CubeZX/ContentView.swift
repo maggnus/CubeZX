@@ -44,12 +44,6 @@ struct ContentView: View {
                         onDragEnd: model.onDragEnded
                     )
                     .frame(width: geo.size.width, height: geo.size.height)
-
-                    if model.isDebugModeEnabled && model.showDebugOverlay {
-                        DebugTerminalOverlay()
-                        CubeInfoOverlay(model: model)
-                            .frame(maxWidth: .infinity, alignment: .trailing)
-                    }
                 }
             }
 
@@ -117,7 +111,6 @@ struct ContentView: View {
                 DebugPopup(
                     isDebugEnabled: $model.isDebugModeEnabled,
                     showRawData: $model.showRawBLEData,
-                    showOverlay: $model.showDebugOverlay,
                     showGyroDebug: $model.showGyroDebug,
                     showDecodedPayload: $model.showDecodedPayload,
                     onClose: { model.isDebugPresented = false }

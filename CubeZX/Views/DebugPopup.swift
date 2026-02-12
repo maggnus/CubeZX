@@ -3,11 +3,10 @@ import SwiftUI
 struct DebugPopup: View {
     @Binding var isDebugEnabled: Bool
     @Binding var showRawData: Bool
-    @Binding var showOverlay: Bool
     @Binding var showGyroDebug: Bool
     @Binding var showDecodedPayload: Bool
     let onClose: () -> Void
-    
+
     private var timeFormatter: DateFormatter {
         let f = DateFormatter()
         f.dateFormat = "HH:mm:ss.SSS"
@@ -35,7 +34,6 @@ struct DebugPopup: View {
             VStack(alignment: .leading, spacing: 8) {
                 Toggle("Debug mode", isOn: $isDebugEnabled)
                 Toggle("Show raw BLE data", isOn: $showRawData)
-                Toggle("Show debug overlay", isOn: $showOverlay)
                 Toggle("Show gyro debug", isOn: $showGyroDebug)
                 Toggle("Show decoded payload", isOn: $showDecodedPayload)
             }
@@ -49,7 +47,7 @@ struct DebugPopup: View {
                 Text("Logging disabled")
                     .font(.caption)
                     .foregroundColor(.white.opacity(0.7))
-                
+
                 Text("Console logging only")
                     .font(.caption2)
                     .foregroundColor(.white.opacity(0.5))
