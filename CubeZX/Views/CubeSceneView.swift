@@ -55,23 +55,23 @@ private struct CubeSceneRepresentable: NSViewRepresentable {
 
     func updateNSView(_ scnView: RotatableSCNView, context: Context) {
         guard let controller = scnView.sceneController else { return }
-        
+
         if shouldSyncState {
-            scnView.lastAnimatedMoveSeq = nil  // Clear tracking on sync
+            scnView.lastAnimatedMoveId = nil  // Clear tracking on sync
             controller.syncState(cubeState)
             DispatchQueue.main.async {
                 onStateSyncComplete()
             }
         } else if shouldReset {
-            scnView.lastAnimatedMoveSeq = nil  // Clear tracking on reset
+            scnView.lastAnimatedMoveId = nil  // Clear tracking on reset
             controller.reset()
             DispatchQueue.main.async {
                 onResetComplete()
             }
         } else if let move = pendingMove, !shouldSyncState {
-            // Only queue animation if this is a NEW move (check by seq from cube protocol)
-            if scnView.lastAnimatedMoveSeq != move.seq {
-                scnView.lastAnimatedMoveSeq = move.seq
+            // Only queue animation if this is a NEW move (check by unique ID)
+            if scnView.lastAnimatedMoveId != move.id {
+                scnView.lastAnimatedMoveId = move.id
                 controller.animateMove(move) {
                     DispatchQueue.main.async {
                         onMoveAnimated()
@@ -79,7 +79,7 @@ private struct CubeSceneRepresentable: NSViewRepresentable {
                 }
             }
         }
-        
+
         // Always apply quaternion orientation
         controller.setQuaternionOrientation(w: quatW, x: quatX, y: quatY, z: quatZ)
     }
@@ -91,7 +91,7 @@ final class RotatableSCNView: SCNView {
     var onDragUpdate: ((Float, Float, Float, Float) -> Void)?  // Called during drag with current orientation
     var onDragEnd: (() -> Void)?  // Called when drag ends
     private var lastMouseLocation: CGPoint = .zero
-    var lastAnimatedMoveSeq: UInt8?  // Track last move seq from cube protocol
+    var lastAnimatedMoveId: UUID?  // Track last move ID to prevent duplicate animations
 
     override func mouseDown(with event: NSEvent) {
         lastMouseLocation = convert(event.locationInWindow, from: nil)

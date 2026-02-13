@@ -24,6 +24,7 @@ final class CubeAppModel: ObservableObject {
     // For auto-reconnect
     private var lastConnectedMAC: String?
     private var cancellables = Set<AnyCancellable>()
+    @Published var disableAutoConnect = false  // Flag to disable auto-connect when user manually disconnects
 
     @Published var isDebugModeEnabled = true
     @Published var showRawBLEData = false
@@ -145,12 +146,12 @@ final class CubeAppModel: ObservableObject {
                     if let range = cube.name.range(of: "-", options: .backwards) {
                         let mac = String(cube.name[range.upperBound...])
 
-                        // Auto-connect if matches last connected device
-                        if let lastMAC = self.lastConnectedMAC, mac == lastMAC {
-                            self.logger.info("Auto-reconnecting to \(cube.name)")
-                            self.connect(to: cube)
-                            return
-                        }
+                    // Auto-connect if matches last connected device and auto-connect is not disabled
+                    if let lastMAC = self.lastConnectedMAC, mac == lastMAC, !disableAutoConnect {
+                        self.logger.info("Auto-reconnecting to \(cube.name)")
+                        self.connect(to: cube)
+                        return
+                    }
                     }
                 }
 
@@ -222,6 +223,7 @@ final class CubeAppModel: ObservableObject {
         isConnected = false
         connectedDeviceName = nil
         batteryLevel = nil
+        disableAutoConnect = true  // Disable auto-connect when user manually disconnects
         activateKeyboardAdapter()
         logger.info("Disconnected from cube")
     }

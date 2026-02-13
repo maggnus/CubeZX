@@ -14,8 +14,7 @@ final class KeyboardCubeAdapter: SmartCubeAdapter {
     }
 
     func activate() {
-        isConnected = true
-        delegate?.adapter(self, didChangeConnection: true)
+        // Don't set isConnected = true - keyboard adapter is virtual, not a real connection
         delegate?.adapter(self, didReceiveDebug: "Keyboard adapter activated")
     }
 

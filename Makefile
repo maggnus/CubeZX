@@ -1,4 +1,4 @@
-.PHONY: build run up clean ios macos
+.PHONY: build run dev up clean ios macos
 
 PROJECT = CubeZX.xcodeproj
 SCHEME = CubeZX
@@ -16,6 +16,11 @@ build:
 run: build
 	@killall $(SCHEME) 2>/dev/null || true
 	@open "$$(ls -td ~/Library/Developer/Xcode/DerivedData/$(SCHEME)-*/Build/Products/Debug/$(SCHEME).app 2>/dev/null | head -1)"
+
+dev: build
+	@killall $(SCHEME) 2>/dev/null || true
+	@echo "Building and running $(SCHEME) in foreground mode with logging..."
+	@"$$(ls -td ~/Library/Developer/Xcode/DerivedData/$(SCHEME)-*/Build/Products/Debug/$(SCHEME).app/Contents/MacOS/$(SCHEME) 2>/dev/null | head -1)"
 
 up: build
 	@killall $(SCHEME) 2>/dev/null || true
@@ -39,6 +44,7 @@ help:
 	@echo "Usage:"
 	@echo "  make build   - Build for macOS"
 	@echo "  make run     - Build and run on macOS (background)"
+	@echo "  make dev     - Build and run on macOS (foreground with console logs)"
 	@echo "  make up      - Build and run on macOS (foreground with console logs)"
 	@echo "  make macos   - Same as 'make run'"
 	@echo "  make ios     - Build and run on iOS Simulator"

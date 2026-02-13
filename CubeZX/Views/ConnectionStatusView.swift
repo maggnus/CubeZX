@@ -2,35 +2,45 @@ import SwiftUI
 
 struct ConnectionStatusView: View {
     @ObservedObject var model: CubeAppModel
-    
+
     var body: some View {
         HStack(spacing: 8) {
             if model.isConnected {
                 Circle()
                     .fill(Color.green)
                     .frame(width: 8, height: 8)
-                
+
                 if let name = model.connectedDeviceName {
                     Text(name)
                         .font(.caption)
                         .foregroundColor(.white)
                 }
-                
+
                 if let battery = model.batteryLevel {
                     BatteryIndicator(level: battery)
                 }
-                
+
                 Button(action: { model.disconnect() }) {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundColor(.white.opacity(0.7))
                 }
                 .buttonStyle(.plain)
-            } else {
+            } else if model.isDiscoveryPresented {
+                // Cube is being discovered but not yet connected - hide buttons
                 Circle()
                     .fill(Color.gray)
                     .frame(width: 8, height: 8)
-                
-                Text("Not connected")
+
+                Text("Disconnected")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.6))
+            } else {
+                // Cube is not connected and not being discovered - show "disconnected" text
+                Circle()
+                    .fill(Color.gray)
+                    .frame(width: 8, height: 8)
+
+                Text("Disconnected")
                     .font(.caption)
                     .foregroundColor(.white.opacity(0.6))
             }
