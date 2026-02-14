@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct NotationPopup: View {
+struct NotationPopupLegacy: View {
     let onClose: () -> Void
     let onSelect: ((CubeState) -> Void)?
     

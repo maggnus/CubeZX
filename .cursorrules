@@ -1,0 +1,147 @@
+# CubeZX AI Rules
+
+## Project Overview
+**App Name:** CubeZX  
+**Platform:** macOS 14.0+ (SwiftUI)  
+**Purpose:** Bluetooth-enabled smart cube companion app with 3D visualization
+
+## Architecture Rules
+
+### 1. Folder Structure
+```
+CubeZX/
+├── CubeZX/
+│   ├── UI/                    # All UI components (NEW)
+│   │   ├── Theme/             # Theme system
+│   │   ├── Components/        # Reusable UI components
+│   │   └── Styles/            # Button styles, etc.
+│   ├── Views/                 # Screen-level views
+│   ├── ViewModels/            # State management
+│   ├── Models/                # Data models
+│   ├── Services/              # Business logic
+│   └── Utilities/             # Helpers
+```
+
+### 2. UI Framework Rules
+
+#### All UI Must:
+- Use `Theme.shared` for ALL colors - NO hardcoded colors
+- Support dark mode by default
+- Use `.environment(\.theme)` for theme injection
+- Be responsive and scalable
+
+#### Color Usage:
+```swift
+// ✅ CORRECT
+.background(Theme.shared.colors.background.primary)
+.foregroundColor(Theme.shared.colors.accent.primary)
+
+// ❌ WRONG
+.background(Color.black)
+.foregroundColor(Color.blue)
+```
+
+### 3. Component Structure
+
+Each UI component must be:
+- In `CubeZX/UI/Components/` folder
+- Self-contained with its own preview
+- Documented with purpose
+- Using theme for styling
+
+### 4. Design Change Rule
+
+**When user requests changes to design elements:**
+- Changes MUST be made at the **component level** (in `CubeZX/UI/Components/`)
+- Changes are automatically reflected **globally** wherever the component is used
+- NEVER duplicate component code in view files
+
+**Example:**
+```swift
+// If user asks to change button styling:
+// ✅ CORRECT: Modify CZXButton.swift - affects all buttons everywhere
+
+// ❌ WRONG: Modify button styling only in one view file
+```
+
+Example:
+```swift
+/// Primary action button with glassmorphic style
+struct CZXButton: View {
+    @Environment(\.theme) private var theme
+    let title: String
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .foregroundColor(theme.colors.text.primary)
+        }
+        .background(theme.colors.accent.primary)
+    }
+}
+```
+
+### 4. Theme System
+
+Always access theme via:
+- `@Environment(\.theme)` for views
+- `Theme.shared` for global access
+
+### 5. Naming Conventions
+
+- UI Components: `CZX[Name]` (e.g., `CZXButton`, `CZXCard`)
+- ViewModels: `[Name]ViewModel`
+- Views: `[Name]View`
+- Protocols: `[Name]Protocol`
+
+### 6. No Hardcoded Values
+
+Never use:
+- Magic numbers for spacing (use theme.spacing)
+- Hardcoded colors (use theme.colors)
+- Hardcoded fonts (use theme.typography)
+- Hardcoded corner radii (use theme.cornerRadius)
+
+### 7. Preview Requirements
+
+Every UI component MUST have a preview:
+```swift
+#Preview("CZXButton") {
+    CZXButton(title: "Example", action: {})
+        .environment(Theme.shared)
+}
+```
+
+## Code Quality Rules
+
+1. **Single Responsibility:** Each view/component does one thing
+2. **Immutability:** Prefer `let` over `var` for view properties
+3. **Composition:** Build complex views by composing simple ones
+4. **No Globals:** Never use global variables; use dependency injection
+
+## Before Making Changes
+
+1. Check if component exists in `UI/` folder
+2. Verify theme usage is correct
+3. Ensure preview works
+4. Build and test before completing
+
+## Current Theme Colors (Reference)
+
+### Background
+- `.background.primary` - Deep void (#0A0A0F)
+- `.background.secondary` - Midnight (#12121A)
+- `.background.tertiary` - Slate (#1E1E2E)
+
+### Accent
+- `.accent.primary` - Neon Cyan (#00D9FF)
+- `.accent.secondary` - Electric Blue (#0080FF)
+- `.accent.success` - Matrix Green (#00FF88)
+- `.accent.warning` - Solar Orange (#FF6B35)
+- `.accent.error` - Alert Red (#FF3366)
+
+### Text
+- `.text.primary` - White
+- `.text.secondary` - White 70% opacity
+- `.text.tertiary` - White 40% opacity
