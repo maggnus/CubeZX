@@ -41,9 +41,18 @@ struct MainView: View {
         }
         .focusable()
         .onKeyPress { handleKeyPress($0) }
-        .popover(isPresented: $showNotationPopup) {
-            NotationPopup {
-                showNotationPopup = false
+        .overlay {
+            if showNotationPopup {
+                CZXPopup(
+                    title: "Notation",
+                    maxWidth: 500,
+                    maxHeight: 450,
+                    onClose: { showNotationPopup = false }
+                ) {
+                    NotationPopup {
+                        showNotationPopup = false
+                    }
+                }
             }
         }
     }

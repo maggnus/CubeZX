@@ -54,9 +54,6 @@ struct CZXPopup<Content: View>: View {
                     }
                     .padding(.horizontal, theme.spacing.medium)
                     .padding(.vertical, theme.spacing.small)
-                    
-                    Divider()
-                        .background(theme.colors.border.primary)
                 }
                 
                 // Content

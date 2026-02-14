@@ -64,6 +64,45 @@ Each UI component must be:
 // ❌ WRONG: Modify button styling only in one view file
 ```
 
+### 5. Popup/Modal Rule
+
+**All popups must use CZXPopup component:**
+- Popup views provide **content only** (no window chrome, no headers, no close buttons)
+- CZXPopup handles: backdrop, container styling, header, close button, sizing
+- Never implement custom popup window logic in view files
+
+**Pattern:**
+```swift
+// ✅ CORRECT: Content-only popup view
+struct MyPopup: View {
+    var body: some View {
+        // Just the content
+        VStack { ... }
+    }
+}
+
+// In parent view:
+.overlay {
+    if showPopup {
+        CZXPopup(title: "My Title", onClose: { showPopup = false }) {
+            MyPopup()
+        }
+    }
+}
+
+// ❌ WRONG: Popup with its own header/frame/background
+struct MyPopup: View {
+    var body: some View {
+        VStack {
+            HStack { Text("Title"); CloseButton(...) }  // Don't do this
+            content
+        }
+        .frame(...)  // Don't do this
+        .background(...)  // Don't do this
+    }
+}
+```
+
 Example:
 ```swift
 /// Primary action button with glassmorphic style

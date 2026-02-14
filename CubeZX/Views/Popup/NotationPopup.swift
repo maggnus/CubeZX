@@ -35,55 +35,29 @@ struct NotationPopup: View {
     ]
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Header with close button
-            HStack {
-                Text("Notation")
-                    .font(theme.typography.title2)
-                    .foregroundColor(theme.colors.text.primary)
+        // Content only - no header, no frame (handled by CZXPopup)
+        ScrollView(.vertical, showsIndicators: true) {
+            VStack(alignment: .leading, spacing: theme.spacing.medium) {
+                // Faces Section
+                CZXListSectionHeader(title: "Faces (R L U D F B)")
+                movesGrid(faceMoves)
                 
-                Spacer()
+                // Modifiers note
+                Text("' = Prime (counter-clockwise)   2 = Double (180°)")
+                    .font(theme.typography.caption)
+                    .foregroundColor(theme.colors.text.secondary)
+                    .padding(.horizontal, theme.spacing.small)
                 
-                Button(action: onClose) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title2)
-                        .foregroundColor(theme.colors.text.secondary)
-                }
-                .buttonStyle(.plain)
+                // Slices Section
+                CZXListSectionHeader(title: "Slices (M E S)")
+                movesGrid(sliceMoves)
+                
+                // Rotations Section
+                CZXListSectionHeader(title: "Rotations (x y z)")
+                movesGrid(rotations)
             }
-            .padding()
-            .background(theme.colors.background.glass)
-            
-            Divider()
-                .background(theme.colors.text.tertiary.opacity(0.3))
-            
-            // Content
-            ScrollView(.vertical, showsIndicators: true) {
-                VStack(alignment: .leading, spacing: theme.spacing.medium) {
-                    // Faces Section
-                    CZXListSectionHeader(title: "Faces (R L U D F B)")
-                    movesGrid(faceMoves)
-                    
-                    // Modifiers note
-                    Text("' = Prime (counter-clockwise)   2 = Double (180°)")
-                        .font(theme.typography.caption)
-                        .foregroundColor(theme.colors.text.secondary)
-                        .padding(.horizontal, theme.spacing.small)
-                    
-                    // Slices Section
-                    CZXListSectionHeader(title: "Slices (M E S)")
-                    movesGrid(sliceMoves)
-                    
-                    // Rotations Section
-                    CZXListSectionHeader(title: "Rotations (x y z)")
-                    movesGrid(rotations)
-                }
-                .padding(.vertical, theme.spacing.small)
-            }
+            .padding(.vertical, theme.spacing.small)
         }
-        .frame(minWidth: 400, idealWidth: 450, maxWidth: 500)
-        .frame(minHeight: 350, idealHeight: 400, maxHeight: 450)
-        .background(theme.colors.background.secondary)
     }
     
     /// Creates a grid of move previews
