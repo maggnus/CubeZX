@@ -12,26 +12,52 @@ struct NotationPopup: View {
     @Environment(\.theme) private var theme
     let onClose: () -> Void
     
-    // Notation move states for preview
+    // Face moves with all variants (clockwise, prime, double)
     private let faceMoves: [(notation: String, state: CubeState)] = [
         ("R", cubeStateForMove("R")),
+        ("R'", cubeStateForMove("R'")),
+        ("R2", cubeStateForMove("R2")),
         ("L", cubeStateForMove("L")),
+        ("L'", cubeStateForMove("L'")),
+        ("L2", cubeStateForMove("L2")),
         ("U", cubeStateForMove("U")),
+        ("U'", cubeStateForMove("U'")),
+        ("U2", cubeStateForMove("U2")),
         ("D", cubeStateForMove("D")),
+        ("D'", cubeStateForMove("D'")),
+        ("D2", cubeStateForMove("D2")),
         ("F", cubeStateForMove("F")),
+        ("F'", cubeStateForMove("F'")),
+        ("F2", cubeStateForMove("F2")),
         ("B", cubeStateForMove("B")),
+        ("B'", cubeStateForMove("B'")),
+        ("B2", cubeStateForMove("B2")),
     ]
     
+    // Slice moves
     private let sliceMoves: [(notation: String, state: CubeState)] = [
         ("M", cubeStateForMove("M")),
+        ("M'", cubeStateForMove("M'")),
+        ("M2", cubeStateForMove("M2")),
         ("E", cubeStateForMove("E")),
+        ("E'", cubeStateForMove("E'")),
+        ("E2", cubeStateForMove("E2")),
         ("S", cubeStateForMove("S")),
+        ("S'", cubeStateForMove("S'")),
+        ("S2", cubeStateForMove("S2")),
     ]
     
+    // Rotations
     private let rotations: [(notation: String, state: CubeState)] = [
         ("x", cubeStateForMove("x")),
+        ("x'", cubeStateForMove("x'")),
+        ("x2", cubeStateForMove("x2")),
         ("y", cubeStateForMove("y")),
+        ("y'", cubeStateForMove("y'")),
+        ("y2", cubeStateForMove("y2")),
         ("z", cubeStateForMove("z")),
+        ("z'", cubeStateForMove("z'")),
+        ("z2", cubeStateForMove("z2")),
     ]
     
     var body: some View {
@@ -60,12 +86,13 @@ struct NotationPopup: View {
         }
     }
     
-    /// Creates a grid of move previews
+    /// Creates a dynamic grid of move previews
     private func movesGrid(_ moves: [(notation: String, state: CubeState)]) -> some View {
-        LazyVGrid(
-            columns: Array(repeating: GridItem(.flexible(), spacing: theme.spacing.medium), count: 3),
-            spacing: theme.spacing.medium
-        ) {
+        let columns = [
+            GridItem(.adaptive(minimum: 70, maximum: 80), spacing: theme.spacing.small)
+        ]
+        
+        return LazyVGrid(columns: columns, spacing: theme.spacing.small) {
             ForEach(moves, id: \.notation) { move in
                 NotationCubeCell(notation: move.notation, state: move.state)
             }
@@ -84,93 +111,73 @@ private struct NotationCubeCell: View {
     
     var body: some View {
         VStack(spacing: theme.spacing.xxSmall) {
-            // Notation badge
-            Text(notation)
-                .font(theme.typography.callout)
-                .fontWeight(.bold)
-                .foregroundColor(theme.colors.background.primary)
-                .frame(width: 40, height: 28)
-                .background(
-                    RoundedRectangle(cornerRadius: theme.cornerRadius.small)
-                        .fill(theme.colors.accent.primary)
-                )
+            // Isometric cube preview - no background
+            CZXIsometricCube(state: state, size: 55)
             
-            // Isometric cube preview
-            CZXIsometricCube(state: state, size: 60)
-                .background(
-                    RoundedRectangle(cornerRadius: theme.cornerRadius.small)
-                        .fill(theme.colors.background.tertiary.opacity(0.5))
-                )
+            // Notation label at bottom - smaller, no background
+            Text(notation)
+                .font(theme.typography.caption)
+                .fontWeight(.medium)
+                .foregroundColor(theme.colors.text.secondary)
         }
     }
 }
 
 // MARK: - Helper Functions
 
-/// Generates a CubeState that visualizes a specific move
+/// Generates a CubeState that visualizes a specific move by applying it
 private func cubeStateForMove(_ notation: String) -> CubeState {
     var state = CubeState.solved()
     
-    switch notation {
+    // Parse notation to determine move and direction
+    let cleanNotation = notation.trimmingCharacters(in: .whitespaces)
+    
+    // Determine direction
+    let direction: CubeMoveDirection
+    if cleanNotation.hasSuffix("2") {
+        direction = .double
+    } else if cleanNotation.hasSuffix("'") {
+        direction = .counterClockwise
+    } else {
+        direction = .clockwise
+    }
+    
+    // Get base move (without modifier)
+    let baseMove = cleanNotation.hasSuffix("2") || cleanNotation.hasSuffix("'")
+        ? String(cleanNotation.dropLast())
+        : cleanNotation
+    
+    // Apply the appropriate move
+    switch baseMove {
     case "R":
-        // Highlight right face - rotate red stickers
-        state = applyVisualRotation(to: state, face: .right)
+        state.apply(CubeMove(face: .right, direction: direction))
     case "L":
-        state = applyVisualRotation(to: state, face: .left)
+        state.apply(CubeMove(face: .left, direction: direction))
     case "U":
-        state = applyVisualRotation(to: state, face: .up)
+        state.apply(CubeMove(face: .up, direction: direction))
     case "D":
-        state = applyVisualRotation(to: state, face: .down)
+        state.apply(CubeMove(face: .down, direction: direction))
     case "F":
-        state = applyVisualRotation(to: state, face: .front)
+        state.apply(CubeMove(face: .front, direction: direction))
     case "B":
-        state = applyVisualRotation(to: state, face: .back)
+        state.apply(CubeMove(face: .back, direction: direction))
     case "M":
-        // Middle slice - show vertical slice in different color
-        state = applySliceVisual(to: state, slice: .middle)
+        state.apply(CubeMove(slice: .middle, direction: direction))
     case "E":
-        state = applySliceVisual(to: state, slice: .equator)
+        state.apply(CubeMove(slice: .equator, direction: direction))
     case "S":
-        state = applySliceVisual(to: state, slice: .standing)
+        state.apply(CubeMove(slice: .standing, direction: direction))
     case "x":
-        state = applyRotationVisual(to: state, axis: .x)
+        state.apply(CubeMove(rotation: .x, direction: direction))
     case "y":
-        state = applyRotationVisual(to: state, axis: .y)
+        state.apply(CubeMove(rotation: .y, direction: direction))
     case "z":
-        state = applyRotationVisual(to: state, axis: .z)
+        state.apply(CubeMove(rotation: .z, direction: direction))
     default:
         break
     }
     
     return state
-}
-
-private func applyVisualRotation(to state: CubeState, face: CubeFace) -> CubeState {
-    // Create a visual representation by slightly modifying the solved state
-    // to show which stickers are affected by the move
-    var newState = state
-    
-    // For simplicity, we'll just return the solved state
-    // In a full implementation, this would show the face being turned
-    return newState
-}
-
-private func applySliceVisual(to state: CubeState, slice: CubeSlice) -> CubeState {
-    return state
-}
-
-private func applyRotationVisual(to state: CubeState, axis: CubeRotationAxis) -> CubeState {
-    return state
-}
-
-// MARK: - Supporting Types
-
-enum CubeSlice {
-    case middle, equator, standing
-}
-
-enum CubeRotationAxis {
-    case x, y, z
 }
 
 // MARK: - Preview

@@ -33,9 +33,9 @@ struct CZXPopup<Content: View>: View {
     
     var body: some View {
         ZStack {
-            // Backdrop
-            theme.colors.background.primary
-                .opacity(0.7)
+            // Backdrop - blurred and semi-transparent
+            Rectangle()
+                .fill(.ultraThinMaterial)
                 .ignoresSafeArea()
                 .onTapGesture { onClose() }
             
@@ -67,13 +67,13 @@ struct CZXPopup<Content: View>: View {
                     RoundedRectangle(cornerRadius: theme.cornerRadius.xLarge)
                         .fill(.ultraThinMaterial)
                     
-                    // Gradient overlay
+                    // Gradient overlay - more transparent
                     RoundedRectangle(cornerRadius: theme.cornerRadius.xLarge)
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    theme.colors.background.secondary.opacity(0.5),
-                                    theme.colors.background.secondary.opacity(0.3)
+                                    theme.colors.background.secondary.opacity(0.3),
+                                    theme.colors.background.secondary.opacity(0.15)
                                 ],
                                 startPoint: .top,
                                 endPoint: .bottom
