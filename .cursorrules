@@ -2,7 +2,7 @@
 
 ## Project Overview
 **App Name:** CubeZX  
-**Platform:** macOS 14.0+ (SwiftUI)  
+**Platform:** macOS 14.0+ / iOS 18.5+ (SwiftUI)
 **Purpose:** Bluetooth-enabled smart cube companion app with 3D visualization
 
 ## Architecture Rules
@@ -127,7 +127,36 @@ Always access theme via:
 - `@Environment(\.theme)` for views
 - `Theme.shared` for global access
 
-### 5. Naming Conventions
+### 5. Cross-Platform Rule
+
+**App must build and run on both macOS and iOS from the same source code:**
+- Use SwiftUI for all UI (cross-platform)
+- Use `#if os(iOS)` and `#if os(macOS)` for platform-specific code
+- Keep platform-specific implementations in separate files with clear naming
+- Common business logic (CubeState, CubeMove, etc.) must be platform-agnostic
+
+**Platform-Specific Files:**
+```
+CubeZX/
+├── Views/
+│   ├── CubeSceneView.swift         # Shared SwiftUI wrapper
+│   ├── CubeSceneController.swift   # Shared logic
+│   ├── CubeSceneView+iOS.swift     # iOS-specific (UIViewRepresentable)
+│   └── CubeSceneView+macOS.swift   # macOS-specific (NSViewRepresentable)
+```
+
+**Compiler Directives:**
+```swift
+#if os(iOS)
+import UIKit
+typealias PlatformView = UIView
+#elseif os(macOS)
+import AppKit
+typealias PlatformView = NSView
+#endif
+```
+
+### 6. Naming Conventions
 
 - UI Components: `CZX[Name]` (e.g., `CZXButton`, `CZXCard`)
 - ViewModels: `[Name]ViewModel`

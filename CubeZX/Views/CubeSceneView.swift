@@ -19,7 +19,11 @@ struct CubeSceneView: View {
 
     var body: some View {
         CubeSceneRepresentable(cubeState: cubeState, pendingMove: pendingMove, shouldReset: shouldReset, shouldSyncState: shouldSyncState, quatW: quatW, quatX: quatX, quatY: quatY, quatZ: quatZ, onMoveAnimated: onMoveAnimated, onResetComplete: onResetComplete, onStateSyncComplete: onStateSyncComplete, onUserInteraction: onUserInteraction, onDragUpdate: onDragUpdate, onDragEnd: onDragEnd)
+            #if os(iOS)
+            .ignoresSafeArea()
+            #else
             .cornerRadius(12)
+            #endif
     }
 }
 
@@ -131,12 +135,14 @@ private struct CubeSceneRepresentable: UIViewRepresentable {
     let cubeState: CubeState
     let pendingMove: CubeMove?
     let shouldReset: Bool
+    let shouldSyncState: Bool
     let quatW: Float
     let quatX: Float
     let quatY: Float
     let quatZ: Float
     let onMoveAnimated: () -> Void
     let onResetComplete: () -> Void
+    let onStateSyncComplete: () -> Void
     let onUserInteraction: (() -> Void)?
     let onDragUpdate: ((Float, Float, Float, Float) -> Void)?
     let onDragEnd: (() -> Void)?
@@ -148,6 +154,8 @@ private struct CubeSceneRepresentable: UIViewRepresentable {
         scnView.allowsCameraControl = true
         scnView.backgroundColor = UIColor(white: 0.08, alpha: 1.0)
         scnView.antialiasingMode = .multisampling4X
+        // Ensure full screen on iOS
+        scnView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         return scnView
     }
 

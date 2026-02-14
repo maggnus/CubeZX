@@ -59,6 +59,60 @@ struct CubeState: Codable, Equatable {
         }
     }
     
+    /// Applies a scramble string (e.g., "R2 L D' F U2")
+    mutating func scramble(_ notation: String) {
+        let moves = notation.split(separator: " ")
+        for move in moves {
+            if let cubeMove = parseMove(String(move)) {
+                apply(cubeMove)
+            }
+        }
+    }
+    
+    /// Parses a single move notation (e.g., "R'", "L2", "M")
+    private func parseMove(_ notation: String) -> CubeMove? {
+        let trimmed = notation.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return nil }
+        
+        // Determine direction
+        let direction: CubeMoveDirection
+        let baseNotation: String
+        
+        if trimmed.hasSuffix("2") {
+            direction = .double
+            baseNotation = String(trimmed.dropLast())
+        } else if trimmed.hasSuffix("'") {
+            direction = .counterClockwise
+            baseNotation = String(trimmed.dropLast())
+        } else {
+            direction = .clockwise
+            baseNotation = trimmed
+        }
+        
+        // Parse the base move
+        switch baseNotation {
+        case "R": return CubeMove(face: .right, direction: direction)
+        case "L": return CubeMove(face: .left, direction: direction)
+        case "U": return CubeMove(face: .up, direction: direction)
+        case "D": return CubeMove(face: .down, direction: direction)
+        case "F": return CubeMove(face: .front, direction: direction)
+        case "B": return CubeMove(face: .back, direction: direction)
+        case "M": return CubeMove(slice: .middle, direction: direction)
+        case "E": return CubeMove(slice: .equator, direction: direction)
+        case "S": return CubeMove(slice: .standing, direction: direction)
+        case "x": return CubeMove(rotation: .x, direction: direction)
+        case "y": return CubeMove(rotation: .y, direction: direction)
+        case "z": return CubeMove(rotation: .z, direction: direction)
+        case "r": return CubeMove(wide: .rightWide, direction: direction)
+        case "l": return CubeMove(wide: .leftWide, direction: direction)
+        case "u": return CubeMove(wide: .upWide, direction: direction)
+        case "d": return CubeMove(wide: .downWide, direction: direction)
+        case "f": return CubeMove(wide: .frontWide, direction: direction)
+        case "b": return CubeMove(wide: .backWide, direction: direction)
+        default: return nil
+        }
+    }
+    
     private mutating func rotateFace(_ face: CubeMoveFace, clockwise: Bool) {
         let faceIndex = CubeState.faceIndex(for: face)
         let start = faceIndex * 9

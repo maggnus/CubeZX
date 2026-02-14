@@ -246,9 +246,15 @@ final class CubeSceneController {
     
     private func snapToGrid(_ cubie: SCNNode) {
         let gridSize = Float(cubieSize)
+        #if os(iOS)
+        cubie.position.x = round(cubie.position.x / gridSize) * gridSize
+        cubie.position.y = round(cubie.position.y / gridSize) * gridSize
+        cubie.position.z = round(cubie.position.z / gridSize) * gridSize
+        #else
         cubie.position.x = CGFloat(round(Float(cubie.position.x) / gridSize) * gridSize)
         cubie.position.y = CGFloat(round(Float(cubie.position.y) / gridSize) * gridSize)
         cubie.position.z = CGFloat(round(Float(cubie.position.z) / gridSize) * gridSize)
+        #endif
         
         // Snap orientation to nearest 90-degree rotation to prevent drift
         snapOrientation(cubie)

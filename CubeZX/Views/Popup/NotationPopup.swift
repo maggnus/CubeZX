@@ -128,55 +128,7 @@ private struct NotationCubeCell: View {
 /// Generates a CubeState that visualizes a specific move by applying it
 private func cubeStateForMove(_ notation: String) -> CubeState {
     var state = CubeState.solved()
-    
-    // Parse notation to determine move and direction
-    let cleanNotation = notation.trimmingCharacters(in: .whitespaces)
-    
-    // Determine direction
-    let direction: CubeMoveDirection
-    if cleanNotation.hasSuffix("2") {
-        direction = .double
-    } else if cleanNotation.hasSuffix("'") {
-        direction = .counterClockwise
-    } else {
-        direction = .clockwise
-    }
-    
-    // Get base move (without modifier)
-    let baseMove = cleanNotation.hasSuffix("2") || cleanNotation.hasSuffix("'")
-        ? String(cleanNotation.dropLast())
-        : cleanNotation
-    
-    // Apply the appropriate move
-    switch baseMove {
-    case "R":
-        state.apply(CubeMove(face: .right, direction: direction))
-    case "L":
-        state.apply(CubeMove(face: .left, direction: direction))
-    case "U":
-        state.apply(CubeMove(face: .up, direction: direction))
-    case "D":
-        state.apply(CubeMove(face: .down, direction: direction))
-    case "F":
-        state.apply(CubeMove(face: .front, direction: direction))
-    case "B":
-        state.apply(CubeMove(face: .back, direction: direction))
-    case "M":
-        state.apply(CubeMove(slice: .middle, direction: direction))
-    case "E":
-        state.apply(CubeMove(slice: .equator, direction: direction))
-    case "S":
-        state.apply(CubeMove(slice: .standing, direction: direction))
-    case "x":
-        state.apply(CubeMove(rotation: .x, direction: direction))
-    case "y":
-        state.apply(CubeMove(rotation: .y, direction: direction))
-    case "z":
-        state.apply(CubeMove(rotation: .z, direction: direction))
-    default:
-        break
-    }
-    
+    state.scramble(notation)
     return state
 }
 

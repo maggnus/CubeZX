@@ -112,3 +112,4 @@ struct MainView: View {
     MainView()
         .environment(Theme.shared)
 }
+
